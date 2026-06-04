@@ -4,6 +4,7 @@ use cpal::{Stream, StreamConfig, SampleFormat, SupportedStreamConfig, traits::*}
 use ringbuf::{HeapRb, traits::{Producer, Consumer, Split}};
 
 use crate::audio::effects::EffectChain;
+use crate::audio::spectrum::SpectrumBuffer;
 use super::devices;
 
 const RING_BUF_SAMPLES: usize = 16_384;
@@ -20,12 +21,14 @@ pub struct RealtimeAudioEngine {
     _streams:         Vec<Stream>,
     pub effect_chain: Arc<Mutex<EffectChain>>,
     last_error:       Arc<Mutex<Option<String>>>,
+    pub sample_rate:  u32,
 }
 
 impl RealtimeAudioEngine {
     pub fn start(
         config: &StartConfig,
         effect_chain: Arc<Mutex<EffectChain>>,
+        spectrum: SpectrumBuffer,
     ) -> Result<Self, String> {
         let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let mut streams: Vec<Stream> = Vec::new();
@@ -55,7 +58,8 @@ impl RealtimeAudioEngine {
         let err_in = Arc::clone(&last_error);
 
         macro_rules! input_cb {
-            ($ty:ty, $to_f32:expr) => {
+            ($ty:ty, $to_f32:expr) => {{
+                let spec = spectrum.clone();
                 move |data: &[$ty], _: &cpal::InputCallbackInfo| {
                     let mut mono: Vec<f32> = if in_channels == 1 {
                         data.iter().map($to_f32).collect()
@@ -65,10 +69,11 @@ impl RealtimeAudioEngine {
                             .collect()
                     };
                     chain.lock().process(&mut mono, sample_rate);
+                    spec.push(&mono);
                     if want_monitor { mon_prod.push_slice(&mono); }
                     if want_virtual { virt_prod.push_slice(&mono); }
                 }
-            };
+            }};
         }
 
         let in_stream = match in_fmt {
@@ -99,7 +104,7 @@ impl RealtimeAudioEngine {
             streams.push(build_output_stream(name, virt_cons, Arc::clone(&last_error))?);
         }
 
-        Ok(Self { _streams: streams, effect_chain, last_error })
+        Ok(Self { _streams: streams, effect_chain, last_error, sample_rate })
     }
 
     pub fn take_error(&self) -> Option<String> {

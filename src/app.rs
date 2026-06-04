@@ -6,7 +6,9 @@ use crate::audio::{
     devices,
     effects::EffectChain,
     engine::{RealtimeAudioEngine, StartConfig},
+    spectrum::SpectrumBuffer,
 };
+use crate::ui::spectrum_panel::SpectrumPanel;
 use crate::profiles::{
     EffectConfig, EffectType, VoiceProfile,
     built_in,
@@ -41,6 +43,9 @@ pub struct App {
 
     // UI state
     show_about:       bool,
+    spectrum:         SpectrumBuffer,
+    spectrum_panel:   SpectrumPanel,
+    audio_sample_rate: u32,
 
     // Persistence — true when unsaved changes exist
     settings_dirty:   bool,
@@ -101,8 +106,11 @@ impl App {
             profiles,
             selected_profile,
             live_effects,
-            show_about:       false,
-            settings_dirty:   false,
+            show_about:        false,
+            spectrum:          SpectrumBuffer::new(),
+            spectrum_panel:    SpectrumPanel::new(),
+            audio_sample_rate: 48_000,
+            settings_dirty:    false,
         };
         app.apply_chain();
         app
@@ -174,11 +182,13 @@ impl App {
                 .then(|| self.selected_virtual.clone())
                 .filter(|s| !s.is_empty()),
         };
-        match RealtimeAudioEngine::start(&cfg, Arc::clone(&self.effect_chain)) {
+        self.spectrum.clear();
+        match RealtimeAudioEngine::start(&cfg, Arc::clone(&self.effect_chain), self.spectrum.clone()) {
             Ok(eng) => {
-                self.engine     = Some(eng);
-                self.status     = "Running".into();
-                self.last_error = None;
+                self.audio_sample_rate = eng.sample_rate;
+                self.engine            = Some(eng);
+                self.status            = "Running".into();
+                self.last_error        = None;
             }
             Err(e) => {
                 self.last_error = Some(e);
@@ -216,10 +226,20 @@ impl eframe::App for App {
             self.reset_to_defaults(ctx);
         }
 
+        // Update spectrum before drawing panels so bar data is fresh
+        let sr = self.audio_sample_rate;
+        self.spectrum_panel.update(&self.spectrum, sr);
+
         show_header(self, ctx);
         show_profile_panel(self, ctx);
         show_device_panel(self, ctx);
+        show_spectrum_panel(self, ctx);  // bottom panel — must come before CentralPanel
         show_effect_panel(self, ctx);
+
+        // Keep repainting while audio is running so the spectrum animates
+        if self.engine.is_some() {
+            ctx.request_repaint();
+        }
 
         // Persist settings whenever something changed
         if self.settings_dirty {
@@ -377,6 +397,19 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                 ui.add_space(4.0);
                 ui.colored_label(Color32::from_rgb(0xe0, 0x70, 0x50), format!("⚠ {}", err));
             }
+        });
+}
+
+// ── Bottom panel: Spectrum visualizer ────────────────────────────────────────
+
+fn show_spectrum_panel(app: &mut App, ctx: &Context) {
+    let accent = app.theme.current().accent;
+    let active  = app.engine.is_some();
+
+    egui::TopBottomPanel::bottom("spectrum")
+        .exact_height(110.0)
+        .show(ctx, |ui| {
+            app.spectrum_panel.show(ui, accent, active);
         });
 }
 
