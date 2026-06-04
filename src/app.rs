@@ -10,9 +10,11 @@ use crate::audio::{
 use crate::profiles::{
     EffectConfig, EffectType, VoiceProfile,
     built_in,
-    factory::{build_chain, build_effect},
+    factory::build_chain,
 };
+use crate::settings::{self, AppSettings};
 use crate::theme::{ThemeChoice, ThemeManager};
+use crate::ui::about_dialog;
 
 pub struct App {
     theme: ThemeManager,
@@ -35,24 +37,53 @@ pub struct App {
     // Profiles
     profiles:         Vec<VoiceProfile>,
     selected_profile: Option<usize>,
-
-    // Live editable copy of the active profile's effects
     live_effects:     Vec<EffectConfig>,
+
+    // UI state
+    show_about:       bool,
+
+    // Persistence — true when unsaved changes exist
+    settings_dirty:   bool,
 }
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let theme = ThemeManager::new();
+        let saved = settings::load();
+
+        let mut theme = ThemeManager::new();
+        theme.choice = saved.theme;
         theme.apply(&cc.egui_ctx);
 
         let input_devices  = devices::list_input_devices();
         let output_devices = devices::list_output_devices();
-        let selected_input   = input_devices.first().cloned().unwrap_or_default();
-        let selected_monitor = output_devices.first().cloned().unwrap_or_default();
+
+        // Restore device selections, falling back to first available
+        let selected_input = saved.input_device_name
+            .filter(|n| input_devices.contains(n))
+            .or_else(|| input_devices.first().cloned())
+            .unwrap_or_default();
+
+        let selected_monitor = saved.monitor_device_name
+            .filter(|n| output_devices.contains(n))
+            .or_else(|| output_devices.first().cloned())
+            .unwrap_or_default();
+
+        let selected_virtual = saved.virtual_device_name
+            .filter(|n| output_devices.contains(n))
+            .unwrap_or_default();
 
         let profiles = built_in::all();
-        // Default to "Clean Voice" (first profile)
-        let live_effects = profiles.first().map(|p| p.effects.clone()).unwrap_or_default();
+
+        // Restore last profile by name, default to index 0
+        let selected_profile = saved.last_profile_name
+            .as_deref()
+            .and_then(|name| profiles.iter().position(|p| p.name == name))
+            .or(Some(0));
+
+        let live_effects = selected_profile
+            .and_then(|i| profiles.get(i))
+            .map(|p| p.effects.clone())
+            .unwrap_or_default();
 
         let mut app = Self {
             theme,
@@ -60,19 +91,64 @@ impl App {
             output_devices,
             selected_input,
             selected_monitor,
-            selected_virtual: String::new(),
-            monitor_enabled: true,
-            virtual_enabled: false,
-            engine: None,
-            effect_chain: Arc::new(Mutex::new(EffectChain::default())),
-            status: "Stopped".into(),
-            last_error: None,
+            selected_virtual,
+            monitor_enabled:  saved.monitor_enabled,
+            virtual_enabled:  saved.virtual_enabled,
+            engine:           None,
+            effect_chain:     Arc::new(Mutex::new(EffectChain::default())),
+            status:           "Stopped".into(),
+            last_error:       None,
             profiles,
-            selected_profile: Some(0),
+            selected_profile,
             live_effects,
+            show_about:       false,
+            settings_dirty:   false,
         };
         app.apply_chain();
         app
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+
+    fn current_settings(&self) -> AppSettings {
+        AppSettings {
+            input_device_name:   Some(self.selected_input.clone()).filter(|s| !s.is_empty()),
+            monitor_device_name: Some(self.selected_monitor.clone()).filter(|s| !s.is_empty()),
+            virtual_device_name: Some(self.selected_virtual.clone()).filter(|s| !s.is_empty()),
+            monitor_enabled:     self.monitor_enabled,
+            virtual_enabled:     self.virtual_enabled,
+            last_profile_name:   self.selected_profile.and_then(|i| self.profiles.get(i)).map(|p| p.name.clone()),
+            theme:               self.theme.choice,
+        }
+    }
+
+    fn reset_to_defaults(&mut self, ctx: &Context) {
+        settings::delete();
+        let defaults = AppSettings::default();
+
+        self.monitor_enabled = defaults.monitor_enabled;
+        self.virtual_enabled = defaults.virtual_enabled;
+        self.selected_virtual = String::new();
+
+        // Restore device defaults (first available)
+        self.selected_input   = self.input_devices.first().cloned().unwrap_or_default();
+        self.selected_monitor = self.output_devices.first().cloned().unwrap_or_default();
+
+        // Restore profile default
+        self.selected_profile = Some(0);
+        if let Some(p) = self.profiles.first() {
+            self.live_effects = p.effects.clone();
+        }
+        self.apply_chain();
+
+        // Restore theme
+        self.theme.choice = defaults.theme;
+        self.theme.apply(ctx);
+
+        // Stop engine if running
+        self.stop_engine();
+
+        self.last_error = None;
     }
 
     // ── Chain management ──────────────────────────────────────────────────────
@@ -85,6 +161,7 @@ impl App {
         self.selected_profile = Some(idx);
         self.live_effects = self.profiles[idx].effects.clone();
         self.apply_chain();
+        self.settings_dirty = true;
     }
 
     // ── Transport ─────────────────────────────────────────────────────────────
@@ -126,16 +203,34 @@ impl App {
     }
 }
 
-// ── egui::App impl ────────────────────────────────────────────────────────────
+// ── egui::App ─────────────────────────────────────────────────────────────────
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         self.poll_engine_errors();
 
+        // About modal — evaluated before panels so it can overlay everything
+        let mut do_reset = false;
+        about_dialog::show(ctx, &mut self.show_about, &mut do_reset);
+        if do_reset {
+            self.reset_to_defaults(ctx);
+        }
+
         show_header(self, ctx);
         show_profile_panel(self, ctx);
         show_device_panel(self, ctx);
         show_effect_panel(self, ctx);
+
+        // Persist settings whenever something changed
+        if self.settings_dirty {
+            settings::save(&self.current_settings());
+            self.settings_dirty = false;
+        }
+    }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        // Final save on clean exit
+        settings::save(&self.current_settings());
     }
 }
 
@@ -146,13 +241,18 @@ fn show_header(app: &mut App, ctx: &Context) {
         ui.horizontal(|ui| {
             ui.heading("BS-VChanger");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let label = match app.theme.choice {
+                if ui.button("About").clicked() {
+                    app.show_about = true;
+                }
+                ui.add_space(8.0);
+                let theme_label = match app.theme.choice {
                     ThemeChoice::Dark => "Neon",
                     ThemeChoice::Neon => "Dark",
                 };
-                if ui.button(label).clicked() {
+                if ui.button(theme_label).clicked() {
                     app.theme.toggle();
                     app.theme.apply(ctx);
+                    app.settings_dirty = true;
                 }
             });
         });
@@ -198,6 +298,7 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
 
             // Input
             ui.label("Input");
+            let prev_input = app.selected_input.clone();
             egui::ComboBox::from_id_salt("input_dev")
                 .selected_text(&app.selected_input)
                 .width(190.0)
@@ -206,13 +307,13 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                         ui.selectable_value(&mut app.selected_input, name.clone(), &name);
                     }
                 });
+            if app.selected_input != prev_input { app.settings_dirty = true; }
 
             ui.add_space(6.0);
 
             // Monitor
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut app.monitor_enabled, "Monitor");
-            });
+            ui.checkbox(&mut app.monitor_enabled, "Monitor");
+            let prev_mon = app.selected_monitor.clone();
             ui.add_enabled_ui(app.monitor_enabled, |ui| {
                 egui::ComboBox::from_id_salt("monitor_dev")
                     .selected_text(&app.selected_monitor)
@@ -223,13 +324,15 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                         }
                     });
             });
+            if app.selected_monitor != prev_mon || app.monitor_enabled != app.monitor_enabled {
+                app.settings_dirty = true;
+            }
 
             ui.add_space(6.0);
 
             // Virtual
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut app.virtual_enabled, "Virtual");
-            });
+            ui.checkbox(&mut app.virtual_enabled, "Virtual");
+            let prev_virt = app.selected_virtual.clone();
             ui.add_enabled_ui(app.virtual_enabled, |ui| {
                 egui::ComboBox::from_id_salt("virtual_dev")
                     .selected_text(if app.selected_virtual.is_empty() { "— select —" } else { &app.selected_virtual })
@@ -240,6 +343,7 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                         }
                     });
             });
+            if app.selected_virtual != prev_virt { app.settings_dirty = true; }
 
             ui.add_space(16.0);
             ui.separator();
@@ -288,7 +392,8 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
 
         if app.live_effects.is_empty() {
             ui.centered_and_justified(|ui| {
-                ui.label(RichText::new("No effects in this profile").color(Color32::from_rgb(0x66, 0x66, 0x77)));
+                ui.label(RichText::new("No effects in this profile")
+                    .color(Color32::from_rgb(0x66, 0x66, 0x77)));
             });
             return;
         }
@@ -299,11 +404,9 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
             for idx in 0..app.live_effects.len() {
                 let cfg = &mut app.live_effects[idx];
                 let label = effect_display_name(cfg.effect_type);
-
-                // Each effect is a collapsing row with an enable checkbox in the header
-                let id = egui::Id::new(("fx", idx));
                 let has_params = effect_has_params(cfg.effect_type);
 
+                let id = egui::Id::new(("fx", idx));
                 egui::collapsing_header::CollapsingState::load_with_default_open(ctx, id, false)
                     .show_header(ui, |ui| {
                         let prev = cfg.enabled;
@@ -311,7 +414,8 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
                         if cfg.enabled != prev { chain_dirty = true; }
                         if !has_params {
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                ui.label(RichText::new("no params").color(Color32::from_rgb(0x55,0x55,0x66)).small());
+                                ui.label(RichText::new("no params")
+                                    .color(Color32::from_rgb(0x55, 0x55, 0x66)).small());
                             });
                         }
                     })
@@ -331,27 +435,27 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
     });
 }
 
-// ── Effect metadata helpers ───────────────────────────────────────────────────
+// ── Effect helpers ────────────────────────────────────────────────────────────
 
 fn effect_display_name(t: EffectType) -> &'static str {
     match t {
-        EffectType::Gain            => "Gain",
-        EffectType::CleanMic        => "Clean Mic",
-        EffectType::NoiseSuppression=> "Noise Suppression",
-        EffectType::PitchShift      => "Pitch Shift",
-        EffectType::BandpassFilter  => "Bandpass Filter",
-        EffectType::Compressor      => "Compressor",
-        EffectType::DeEsser         => "De-Esser",
-        EffectType::Echo            => "Echo",
-        EffectType::Reverb          => "Reverb",
-        EffectType::Chorus          => "Chorus",
-        EffectType::Flanger         => "Flanger",
-        EffectType::Tremolo         => "Tremolo",
-        EffectType::Vibrato         => "Vibrato",
-        EffectType::Distortion      => "Distortion",
-        EffectType::LoFi            => "Lo-Fi",
-        EffectType::RingMod         => "Ring Mod",
-        EffectType::Robot           => "Robot",
+        EffectType::Gain             => "Gain",
+        EffectType::CleanMic         => "Clean Mic",
+        EffectType::NoiseSuppression => "Noise Suppression",
+        EffectType::PitchShift       => "Pitch Shift",
+        EffectType::BandpassFilter   => "Bandpass Filter",
+        EffectType::Compressor       => "Compressor",
+        EffectType::DeEsser          => "De-Esser",
+        EffectType::Echo             => "Echo",
+        EffectType::Reverb           => "Reverb",
+        EffectType::Chorus           => "Chorus",
+        EffectType::Flanger          => "Flanger",
+        EffectType::Tremolo          => "Tremolo",
+        EffectType::Vibrato          => "Vibrato",
+        EffectType::Distortion       => "Distortion",
+        EffectType::LoFi             => "Lo-Fi",
+        EffectType::RingMod          => "Ring Mod",
+        EffectType::Robot            => "Robot",
     }
 }
 
@@ -359,8 +463,6 @@ fn effect_has_params(t: EffectType) -> bool {
     !matches!(t, EffectType::CleanMic | EffectType::NoiseSuppression)
 }
 
-/// Shows parameter sliders for the given effect type.
-/// Returns `true` if any value changed.
 fn effect_params_ui(
     ui: &mut Ui,
     t: EffectType,
@@ -379,17 +481,13 @@ fn effect_params_ui(
     }
 
     match t {
-        EffectType::CleanMic | EffectType::NoiseSuppression => {
-            // shown as "no params" in header
-        }
+        EffectType::CleanMic | EffectType::NoiseSuppression => {}
 
-        EffectType::Gain => {
-            slider!("Gain", "gain", 0.0, 4.0, 1.0);
-        }
+        EffectType::Gain =>
+            { slider!("Gain", "gain", 0.0, 4.0, 1.0); }
 
-        EffectType::PitchShift => {
-            slider!("Semitones", "semitones", -12.0, 12.0, 0.0);
-        }
+        EffectType::PitchShift =>
+            { slider!("Semitones", "semitones", -12.0, 12.0, 0.0); }
 
         EffectType::BandpassFilter => {
             slider!("Center Hz", "center_freq", 200.0, 8000.0, 2000.0);
@@ -397,10 +495,10 @@ fn effect_params_ui(
         }
 
         EffectType::Compressor => {
-            slider!("Threshold", "threshold", 0.05, 1.0,  0.5);
-            slider!("Ratio",     "ratio",     1.0,  20.0, 4.0);
-            slider!("Attack (s)", "attack",   0.001,0.1,  0.005);
-            slider!("Release (s)","release",  0.01, 1.0,  0.1);
+            slider!("Threshold",  "threshold", 0.05, 1.0,  0.5);
+            slider!("Ratio",      "ratio",     1.0,  20.0, 4.0);
+            slider!("Attack (s)", "attack",    0.001,0.1,  0.005);
+            slider!("Release (s)","release",   0.01, 1.0,  0.1);
         }
 
         EffectType::DeEsser => {
@@ -409,9 +507,9 @@ fn effect_params_ui(
         }
 
         EffectType::Echo => {
-            slider!("Delay (s)",  "delay_secs", 0.05, 2.0,  0.3);
-            slider!("Feedback",   "feedback",   0.0,  0.95, 0.3);
-            slider!("Wet",        "wet",        0.0,  1.0,  0.5);
+            slider!("Delay (s)", "delay_secs", 0.05, 2.0,  0.3);
+            slider!("Feedback",  "feedback",   0.0,  0.95, 0.3);
+            slider!("Wet",       "wet",        0.0,  1.0,  0.5);
         }
 
         EffectType::Reverb => {
@@ -420,9 +518,9 @@ fn effect_params_ui(
         }
 
         EffectType::Chorus => {
-            slider!("Rate (Hz)", "rate",  0.1, 8.0,   1.5);
+            slider!("Rate (Hz)", "rate",  0.1,   8.0,  1.5);
             slider!("Depth",     "depth", 0.001, 0.02, 0.003);
-            slider!("Wet",       "wet",   0.0, 1.0,   0.5);
+            slider!("Wet",       "wet",   0.0,   1.0,  0.5);
         }
 
         EffectType::Flanger => {
@@ -452,13 +550,11 @@ fn effect_params_ui(
             slider!("Downsample", "downsample", 1.0,  8.0, 2.0);
         }
 
-        EffectType::RingMod => {
-            slider!("Carrier Hz", "carrier_freq", 20.0, 2000.0, 200.0);
-        }
+        EffectType::RingMod =>
+            { slider!("Carrier Hz", "carrier_freq", 20.0, 2000.0, 200.0); }
 
-        EffectType::Robot => {
-            slider!("Pitch Hz", "pitch_hz", 50.0, 500.0, 100.0);
-        }
+        EffectType::Robot =>
+            { slider!("Pitch Hz", "pitch_hz", 50.0, 500.0, 100.0); }
     }
 
     changed

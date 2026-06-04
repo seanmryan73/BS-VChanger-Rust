@@ -8,18 +8,19 @@ debug/
 # Windows debugging symbols (MSVC)
 *.pdb
 
+# Windows executables dropped in repo root (e.g. manual release copies)
+*.exe
+
 # IDE
 .idea/
 .vscode/
 *.suo
 *.user
 
-# App data / user files (not part of source)
-*.log
-/settings.json
-/profiles.json
-
 # OS
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# NOTE: Cargo.lock is intentionally committed — this is a binary crate.
+# App data (settings.json, profiles.json) is written to %APPDATA%\BS-VChanger-Rust\, not here.
