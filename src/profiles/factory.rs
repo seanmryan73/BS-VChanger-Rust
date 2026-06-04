@@ -36,7 +36,7 @@ pub fn build_effect(cfg: &EffectConfig) -> Box<dyn AudioEffect> {
             Box::new(CleanMicEffect::new()),
 
         EffectType::NoiseSuppression =>
-            Box::new(NoiseSuppressionEffect::new()),
+            Box::new(NoiseSuppressionEffect::new(p(cfg, "strength", 1.0))),
 
         EffectType::PitchShift =>
             Box::new(PitchResampleEffect::new(p(cfg, "semitones", 0.0))),

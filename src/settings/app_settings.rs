@@ -10,6 +10,14 @@ pub struct AppSettings {
     pub virtual_enabled:     bool,
     pub last_profile_name:   Option<String>,
     pub theme:               ThemeChoice,
+    #[serde(default = "default_category_expanded")]
+    pub category_expanded:   [bool; 4],
+    #[serde(default)]
+    pub auto_start:          bool,
+}
+
+fn default_category_expanded() -> [bool; 4] {
+    [true; 4]
 }
 
 impl Default for AppSettings {
@@ -21,7 +29,9 @@ impl Default for AppSettings {
             monitor_enabled:     true,
             virtual_enabled:     false,
             last_profile_name:   Some("Clean Voice".into()),
-            theme:               ThemeChoice::Dark,
+            theme:               ThemeChoice::Earth,
+            category_expanded:   [true; 4],
+            auto_start:          false,
         }
     }
 }

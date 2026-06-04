@@ -6,3 +6,4 @@ pub mod repository;
 
 pub use effect_types::EffectType;
 pub use profile::{EffectConfig, VoiceProfile};
+pub use repository::{load_user_profiles, save_user_profiles};

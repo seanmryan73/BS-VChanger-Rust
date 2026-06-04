@@ -2,49 +2,51 @@ use std::collections::VecDeque;
 use nnnoiseless::DenoiseState;
 use super::AudioEffect;
 
-// RNNoise requires exactly 480 samples per frame at 48 kHz.
 const FRAME_SIZE: usize = DenoiseState::FRAME_SIZE;
-
-// nnnoiseless operates in the 16-bit integer amplitude range.
 const SCALE: f32 = 32_768.0;
 
 pub struct NoiseSuppressionEffect {
-    state:   Box<DenoiseState<'static>>,
-    in_buf:  Vec<f32>,          // accumulates scaled input until a full frame is ready
-    out_buf: VecDeque<f32>,     // holds processed output waiting to be drained
+    /// 0.0 = bypass (dry), 1.0 = full denoising. Wet/dry mix of the RNNoise output.
+    pub strength: f32,
+    state:        Box<DenoiseState<'static>>,
+    in_buf:       Vec<f32>,
+    out_buf:      VecDeque<f32>,
 }
 
 impl NoiseSuppressionEffect {
-    pub fn new() -> Self {
+    pub fn new(strength: f32) -> Self {
         Self {
-            state:   DenoiseState::new(),
-            in_buf:  Vec::with_capacity(FRAME_SIZE * 2),
-            out_buf: VecDeque::new(),
+            strength: strength.clamp(0.0, 1.0),
+            state:    DenoiseState::new(),
+            in_buf:   Vec::with_capacity(FRAME_SIZE * 2),
+            out_buf:  VecDeque::new(),
         }
     }
 }
 
 impl AudioEffect for NoiseSuppressionEffect {
     fn process(&mut self, samples: &mut [f32], sample_rate: u32) {
-        // RNNoise only works at 48 kHz — pass through at other rates.
-        // Most WASAPI shared-mode configs default to 48 kHz on Windows.
         if sample_rate != 48_000 {
-            return;
+            return; // RNNoise requires 48 kHz
+        }
+        if self.strength <= 0.001 {
+            return; // fully bypassed — skip the expensive FFT
         }
 
-        // Scale f32 [-1, 1] → i16 range for the RNNoise model.
         self.in_buf.extend(samples.iter().map(|s| s * SCALE));
 
-        // Drain full 480-sample frames through the denoiser.
         while self.in_buf.len() >= FRAME_SIZE {
             let frame: Vec<f32> = self.in_buf.drain(..FRAME_SIZE).collect();
-            let mut output_frame = [0.0f32; FRAME_SIZE];
-            self.state.process_frame(&mut output_frame, &frame);
-            // Scale back to [-1, 1] and queue output.
-            self.out_buf.extend(output_frame.iter().map(|s| s / SCALE));
+            let mut denoised = [0.0f32; FRAME_SIZE];
+            self.state.process_frame(&mut denoised, &frame);
+
+            // Wet/dry mix: blend denoised with original at the configured strength
+            for (orig, den) in frame.iter().zip(denoised.iter()) {
+                let mixed = orig * (1.0 - self.strength) + den * self.strength;
+                self.out_buf.push_back(mixed / SCALE);
+            }
         }
 
-        // Fill the caller's buffer from processed output.
         for s in samples.iter_mut() {
             *s = self.out_buf.pop_front().unwrap_or(0.0);
         }

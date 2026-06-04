@@ -4,6 +4,7 @@ use cpal::{Stream, StreamConfig, SampleFormat, SupportedStreamConfig, traits::*}
 use ringbuf::{HeapRb, traits::{Producer, Consumer, Split}};
 
 use crate::audio::effects::EffectChain;
+use crate::audio::level::LevelBuffer;
 use crate::audio::spectrum::SpectrumBuffer;
 use super::devices;
 
@@ -29,6 +30,7 @@ impl RealtimeAudioEngine {
         config: &StartConfig,
         effect_chain: Arc<Mutex<EffectChain>>,
         spectrum: SpectrumBuffer,
+        input_level: LevelBuffer,
     ) -> Result<Self, String> {
         let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let mut streams: Vec<Stream> = Vec::new();
@@ -59,7 +61,8 @@ impl RealtimeAudioEngine {
 
         macro_rules! input_cb {
             ($ty:ty, $to_f32:expr) => {{
-                let spec = spectrum.clone();
+                let spec  = spectrum.clone();
+                let level = input_level.clone();
                 move |data: &[$ty], _: &cpal::InputCallbackInfo| {
                     let mut mono: Vec<f32> = if in_channels == 1 {
                         data.iter().map($to_f32).collect()
@@ -68,8 +71,9 @@ impl RealtimeAudioEngine {
                             .map(|ch| ch.iter().map($to_f32).sum::<f32>() / in_channels as f32)
                             .collect()
                     };
+                    level.push(&mono);                        // raw level before effects
                     chain.lock().process(&mut mono, sample_rate);
-                    spec.push(&mono);
+                    spec.push(&mono);                         // spectrum after effects
                     if want_monitor { mon_prod.push_slice(&mono); }
                     if want_virtual { virt_prod.push_slice(&mono); }
                 }
