@@ -427,15 +427,17 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
             // Transport
             let running = app.engine.is_some();
             let (btn_label, btn_color) = if running {
-                ("■  Stop",  Color32::from_rgb(0xe0, 0x50, 0x50))
+                ("■  Stop",  Color32::from_rgb(0xc0, 0x38, 0x38))
             } else {
-                ("▶  Start", Color32::from_rgb(0x50, 0xc0, 0x70))
+                ("▶  Start", Color32::from_rgb(0x2a, 0x9a, 0x52))
             };
 
             if ui.add(
-                egui::Button::new(RichText::new(btn_label).strong())
-                    .fill(btn_color)
-                    .min_size(egui::vec2(190.0, 36.0)),
+                egui::Button::new(
+                    RichText::new(btn_label).strong().color(Color32::WHITE)
+                )
+                .fill(btn_color)
+                .min_size(egui::vec2(190.0, 36.0)),
             ).clicked() {
                 if running { app.stop_engine(); } else { app.start_engine(); }
             }

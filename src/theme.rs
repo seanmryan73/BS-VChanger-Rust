@@ -16,6 +16,7 @@ pub struct AppTheme {
     pub text:         Color32,
     pub text_muted:   Color32,  // group labels, hints
     pub slider_track: Color32,  // unselected slider rail
+    pub selection_bg: Color32,  // selected label / slider fill — calm, white-text-readable
     pub border:       Color32,
 }
 
@@ -30,6 +31,7 @@ impl AppTheme {
             text:         Color32::from_rgb(0xe4, 0xe4, 0xf0),
             text_muted:   Color32::from_rgb(0x60, 0x60, 0x78),
             slider_track: Color32::from_rgb(0x28, 0x28, 0x3c),
+            selection_bg: Color32::from_rgb(0x22, 0x3a, 0x62), // dark steel-blue, white text readable
             border:       Color32::from_rgb(0x2c, 0x2c, 0x3e),
         }
     }
@@ -44,6 +46,7 @@ impl AppTheme {
             text:         Color32::WHITE,
             text_muted:   Color32::from_rgb(0x44, 0x88, 0x80),
             slider_track: Color32::from_rgb(0x14, 0x14, 0x28),
+            selection_bg: Color32::from_rgb(0x07, 0x30, 0x2a), // dark teal, white text readable
             border:       Color32::from_rgb(0x00, 0x55, 0x4c),
         }
     }
@@ -110,8 +113,9 @@ impl ThemeManager {
         v.widgets.active.bg_stroke     = Stroke::new(1.5, t.accent);
         v.widgets.active.expansion     = 1.0;
 
-        // ── Selection (slider fill, text selection) ───────────────────────────
-        v.selection.bg_fill            = t.accent.linear_multiply(0.85);
+        // ── Selection (slider fill, selectable label bg) ──────────────────────
+        // Calm enough that white text is clearly readable on top.
+        v.selection.bg_fill            = t.selection_bg;
         v.selection.stroke             = Stroke::new(1.0, t.accent);
 
         // ── Text ──────────────────────────────────────────────────────────────
