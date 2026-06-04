@@ -99,14 +99,7 @@ impl SpectrumPanel {
                 Vec2::new((bar_width - 1.0).max(1.0), bar_h),
             );
 
-            // Gradient: dim at base, full accent near top
-            let t = height_norm.powf(0.6); // gamma-correct for perceptual linearity
-            let r = lerp_u8(accent.r() / 2, accent.r(), t);
-            let g = lerp_u8(accent.g() / 2, accent.g(), t);
-            let b = lerp_u8(accent.b() / 2, accent.b(), t);
-            let a = lerp_u8(80,  220, t);
-
-            painter.rect_filled(bar_rect, 1.5, Color32::from_rgba_unmultiplied(r, g, b, a));
+            painter.rect_filled(bar_rect, 1.5, vu_color(height_norm, accent));
         }
     }
 }
@@ -138,6 +131,44 @@ fn log_bins(mags: &[f32], sample_rate: u32) -> Vec<f32> {
             ((db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)).clamp(0.0, 1.0)
         })
         .collect()
+}
+
+/// VU-meter colour: theme accent (low) → yellow (mid) → red (high peaks).
+///
+/// Zones (normalised 0–1):
+///   0.00 – 0.65  theme accent, dimming toward the base
+///   0.65 – 0.82  accent → yellow transition
+///   0.82 – 1.00  yellow → red transition
+fn vu_color(norm: f32, accent: Color32) -> Color32 {
+    // Yellow and red are fixed across themes
+    let yellow = Color32::from_rgb(0xe8, 0xb8, 0x00);
+    let red    = Color32::from_rgb(0xe8, 0x30, 0x30);
+
+    let (base_color, t) = if norm < 0.65 {
+        // Dim version of accent at the base → full accent at 0.65
+        let dim = Color32::from_rgba_unmultiplied(
+            accent.r() / 3,
+            accent.g() / 3,
+            accent.b() / 3,
+            100,
+        );
+        (lerp_color(dim, accent, norm / 0.65), 1.0f32)
+    } else if norm < 0.82 {
+        (lerp_color(accent, yellow, (norm - 0.65) / 0.17), 1.0)
+    } else {
+        (lerp_color(yellow, red, (norm - 0.82) / 0.18), 1.0)
+    };
+
+    let alpha = lerp_u8(70, 230, norm);
+    Color32::from_rgba_unmultiplied(base_color.r(), base_color.g(), base_color.b(), alpha)
+}
+
+fn lerp_color(a: Color32, b: Color32, t: f32) -> Color32 {
+    Color32::from_rgb(
+        lerp_u8(a.r(), b.r(), t),
+        lerp_u8(a.g(), b.g(), t),
+        lerp_u8(a.b(), b.b(), t),
+    )
 }
 
 fn lerp_u8(a: u8, b: u8, t: f32) -> u8 {

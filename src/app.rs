@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use parking_lot::Mutex;
-use eframe::egui::{self, Color32, Context, RichText, Ui};
+use eframe::egui::{self, Color32, Context, Pos2, RichText, Stroke, Ui};
 
 use crate::audio::{
     devices,
@@ -42,10 +42,11 @@ pub struct App {
     live_effects:     Vec<EffectConfig>,
 
     // UI state
-    show_about:       bool,
-    spectrum:         SpectrumBuffer,
-    spectrum_panel:   SpectrumPanel,
-    audio_sample_rate: u32,
+    show_about:          bool,
+    category_expanded:   [bool; 4],   // one per PROFILE_GROUPS entry
+    spectrum:            SpectrumBuffer,
+    spectrum_panel:      SpectrumPanel,
+    audio_sample_rate:   u32,
 
     // Persistence — true when unsaved changes exist
     settings_dirty:   bool,
@@ -107,6 +108,7 @@ impl App {
             selected_profile,
             live_effects,
             show_about:        false,
+            category_expanded: [true; 4],
             spectrum:          SpectrumBuffer::new(),
             spectrum_panel:    SpectrumPanel::new(),
             audio_sample_rate: 48_000,
@@ -254,6 +256,24 @@ impl eframe::App for App {
     }
 }
 
+// ── Shared UI helpers ─────────────────────────────────────────────────────────
+
+/// Renders a bold section label with a thin accent-colored rule beneath it.
+fn section_header(ui: &mut Ui, label: &str, accent: Color32) {
+    ui.add_space(6.0);
+    ui.label(RichText::new(label).strong().small().color(accent));
+    // Thin rule across the full panel width
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), 1.0),
+        egui::Sense::hover(),
+    );
+    ui.painter().line_segment(
+        [Pos2::new(rect.left(), rect.center().y), Pos2::new(rect.right(), rect.center().y)],
+        Stroke::new(1.0, accent.linear_multiply(0.30)),
+    );
+    ui.add_space(6.0);
+}
+
 // ── Header ────────────────────────────────────────────────────────────────────
 
 fn show_header(app: &mut App, ctx: &Context) {
@@ -279,24 +299,61 @@ fn show_header(app: &mut App, ctx: &Context) {
     });
 }
 
+// Profile groups: (label, start_index, end_index_exclusive)
+const PROFILE_GROUPS: &[(&str, usize, usize)] = &[
+    ("CLEAN VOICE",       0,  8),
+    ("PITCH & CHARACTER", 8,  16),
+    ("SPACE & ROOM",      16, 19),
+    ("CREATIVE",          19, 24),
+];
+
 // ── Left panel: Profile list ──────────────────────────────────────────────────
 
 fn show_profile_panel(app: &mut App, ctx: &Context) {
+    let theme = app.theme.current();
+
     egui::SidePanel::left("profiles")
         .min_width(170.0)
         .max_width(220.0)
         .show(ctx, |ui| {
-            ui.add_space(6.0);
-            ui.label(RichText::new("PROFILES").strong().small());
-            ui.add_space(4.0);
-            ui.separator();
+            section_header(ui, "PROFILES", theme.accent);
 
             egui::ScrollArea::vertical().show(ui, |ui| {
-                for i in 0..app.profiles.len() {
-                    let selected = app.selected_profile == Some(i);
-                    let name = app.profiles[i].name.clone();
-                    if ui.selectable_label(selected, &name).clicked() && !selected {
-                        app.select_profile(i);
+                for (group_idx, &(group_name, start, end)) in PROFILE_GROUPS.iter().enumerate() {
+                    if group_idx > 0 { ui.add_space(4.0); }
+
+                    // Collapsible group header — frameless button looks like a label but is clickable
+                    let expanded = app.category_expanded[group_idx];
+                    let arrow = if expanded { "▼" } else { "▶" };
+                    let hdr = ui.add(
+                        egui::Button::new(
+                            RichText::new(format!("{arrow}  {group_name}"))
+                                .color(theme.text_muted)
+                                .small()
+                                .strong(),
+                        )
+                        .frame(false),
+                    );
+                    if hdr.clicked() {
+                        app.category_expanded[group_idx] = !expanded;
+                    }
+
+                    if expanded {
+                        for i in start..end.min(app.profiles.len()) {
+                            let selected = app.selected_profile == Some(i);
+                            let name = app.profiles[i].name.clone();
+
+                            // White text on accent background = high contrast when selected.
+                            // Muted text otherwise so selected item pops.
+                            let resp = ui.selectable_label(
+                                selected,
+                                RichText::new(format!("    {name}"))
+                                    .color(if selected { Color32::WHITE } else { theme.text }),
+                            );
+                            if resp.clicked() && !selected {
+                                app.select_profile(i);
+                            }
+                        }
                     }
                 }
             });
@@ -306,15 +363,13 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
 // ── Right panel: Devices + Transport ─────────────────────────────────────────
 
 fn show_device_panel(app: &mut App, ctx: &Context) {
+    let accent = app.theme.current().accent;
+
     egui::SidePanel::right("devices")
         .min_width(220.0)
         .max_width(300.0)
         .show(ctx, |ui| {
-            ui.add_space(6.0);
-            ui.label(RichText::new("DEVICES").strong().small());
-            ui.add_space(4.0);
-            ui.separator();
-            ui.add_space(6.0);
+            section_header(ui, "DEVICES", accent);
 
             // Input
             ui.label("Input");
@@ -416,12 +471,10 @@ fn show_spectrum_panel(app: &mut App, ctx: &Context) {
 // ── Center panel: Effect chain editor ────────────────────────────────────────
 
 fn show_effect_panel(app: &mut App, ctx: &Context) {
+    let accent = app.theme.current().accent;
+
     egui::CentralPanel::default().show(ctx, |ui| {
-        ui.add_space(6.0);
-        ui.label(RichText::new("EFFECT CHAIN").strong().small());
-        ui.add_space(4.0);
-        ui.separator();
-        ui.add_space(4.0);
+        section_header(ui, "EFFECT CHAIN", accent);
 
         if app.live_effects.is_empty() {
             ui.centered_and_justified(|ui| {

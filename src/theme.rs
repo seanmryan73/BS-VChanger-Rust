@@ -1,4 +1,4 @@
-use eframe::egui::{Color32, Context, Rounding, Style, Visuals};
+use eframe::egui::{Color32, Context, Rounding, Stroke, Style, Visuals};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -9,37 +9,42 @@ pub enum ThemeChoice {
 }
 
 pub struct AppTheme {
-    pub background:  Color32,
-    pub panel:       Color32,
-    pub accent:      Color32,
-    pub accent_alt:  Color32,
-    pub text:        Color32,
-    pub slider_fill: Color32,
-    pub border:      Color32,
+    pub background:   Color32,
+    pub panel:        Color32,
+    pub accent:       Color32,
+    pub accent_alt:   Color32,  // secondary accent (spectrum peaks, highlights)
+    pub text:         Color32,
+    pub text_muted:   Color32,  // group labels, hints
+    pub slider_track: Color32,  // unselected slider rail
+    pub border:       Color32,
 }
 
 impl AppTheme {
+    /// Professional dark theme — deep navy-grey, cool blue accent.
     pub fn dark() -> Self {
         Self {
-            background:  Color32::from_rgb(0x1a, 0x1a, 0x1e),
-            panel:       Color32::from_rgb(0x25, 0x25, 0x2b),
-            accent:      Color32::from_rgb(0x5b, 0x9c, 0xf6),
-            accent_alt:  Color32::from_rgb(0x8b, 0x6c, 0xf5),
-            text:        Color32::from_rgb(0xe0, 0xe0, 0xe0),
-            slider_fill: Color32::from_rgb(0x3a, 0x6b, 0xc8),
-            border:      Color32::from_rgb(0x3a, 0x3a, 0x44),
+            background:   Color32::from_rgb(0x12, 0x12, 0x18),
+            panel:        Color32::from_rgb(0x1c, 0x1c, 0x26),
+            accent:       Color32::from_rgb(0x5b, 0x9c, 0xf6),
+            accent_alt:   Color32::from_rgb(0x8b, 0x6c, 0xf5),
+            text:         Color32::from_rgb(0xe4, 0xe4, 0xf0),
+            text_muted:   Color32::from_rgb(0x60, 0x60, 0x78),
+            slider_track: Color32::from_rgb(0x28, 0x28, 0x3c),
+            border:       Color32::from_rgb(0x2c, 0x2c, 0x3e),
         }
     }
 
+    /// Neon theme — near-black, vivid cyan accent with magenta highs.
     pub fn neon() -> Self {
         Self {
-            background:  Color32::from_rgb(0x0d, 0x0d, 0x14),
-            panel:       Color32::from_rgb(0x14, 0x14, 0x1f),
-            accent:      Color32::from_rgb(0x00, 0xf5, 0xd4),
-            accent_alt:  Color32::from_rgb(0xf7, 0x00, 0xff),
-            text:        Color32::WHITE,
-            slider_fill: Color32::from_rgb(0x7b, 0x00, 0xff),
-            border:      Color32::from_rgb(0x00, 0xf5, 0xd4),
+            background:   Color32::from_rgb(0x09, 0x09, 0x0f),
+            panel:        Color32::from_rgb(0x10, 0x10, 0x1a),
+            accent:       Color32::from_rgb(0x00, 0xe5, 0xc8),
+            accent_alt:   Color32::from_rgb(0xd4, 0x00, 0xf5),
+            text:         Color32::WHITE,
+            text_muted:   Color32::from_rgb(0x44, 0x88, 0x80),
+            slider_track: Color32::from_rgb(0x14, 0x14, 0x28),
+            border:       Color32::from_rgb(0x00, 0x55, 0x4c),
         }
     }
 }
@@ -72,24 +77,58 @@ impl ThemeManager {
         let mut style = Style::default();
         let mut v = Visuals::dark();
 
-        v.panel_fill             = t.panel;
-        v.window_fill            = t.background;
-        v.extreme_bg_color       = t.background;
-        v.faint_bg_color         = t.panel;
-        v.widgets.noninteractive.bg_fill = t.panel;
-        v.widgets.noninteractive.fg_stroke.color = t.border;
-        v.widgets.inactive.bg_fill = t.panel;
-        v.widgets.inactive.fg_stroke.color = t.border;
-        v.widgets.hovered.bg_fill = t.accent.linear_multiply(0.25);
-        v.widgets.hovered.fg_stroke.color = t.accent;
-        v.widgets.active.bg_fill  = t.accent.linear_multiply(0.45);
-        v.widgets.active.fg_stroke.color = t.accent;
-        v.selection.bg_fill       = t.accent.linear_multiply(0.35);
-        v.selection.stroke.color  = t.accent;
-        v.override_text_color     = Some(t.text);
-        v.window_rounding         = Rounding::same(6.0);
+        // ── Backgrounds ───────────────────────────────────────────────────────
+        v.panel_fill           = t.panel;
+        v.window_fill          = t.background;
+        v.extreme_bg_color     = t.background;
+        v.faint_bg_color       = t.slider_track;
+
+        // ── Non-interactive (labels, separators) ─────────────────────────────
+        v.widgets.noninteractive.bg_fill          = t.panel;
+        v.widgets.noninteractive.fg_stroke        = Stroke::new(1.0, t.border);
+        v.widgets.noninteractive.rounding         = Rounding::same(4.0);
+        v.widgets.noninteractive.bg_stroke        = Stroke::new(1.0, t.border);
+
+        // ── Inactive (default button / slider track) ──────────────────────────
+        v.widgets.inactive.bg_fill     = t.slider_track;
+        v.widgets.inactive.fg_stroke   = Stroke::new(1.0, t.border);
+        v.widgets.inactive.rounding    = Rounding::same(4.0);
+        v.widgets.inactive.bg_stroke   = Stroke::new(1.0, t.border);
+        v.widgets.inactive.expansion   = 0.0;
+
+        // ── Hovered ───────────────────────────────────────────────────────────
+        v.widgets.hovered.bg_fill      = t.accent.linear_multiply(0.18);
+        v.widgets.hovered.fg_stroke    = Stroke::new(1.5, t.accent);
+        v.widgets.hovered.rounding     = Rounding::same(4.0);
+        v.widgets.hovered.bg_stroke    = Stroke::new(1.0, t.accent.linear_multiply(0.5));
+        v.widgets.hovered.expansion    = 1.0;
+
+        // ── Active (pressed / dragging) ───────────────────────────────────────
+        v.widgets.active.bg_fill       = t.accent.linear_multiply(0.32);
+        v.widgets.active.fg_stroke     = Stroke::new(2.0, t.accent);
+        v.widgets.active.rounding      = Rounding::same(4.0);
+        v.widgets.active.bg_stroke     = Stroke::new(1.5, t.accent);
+        v.widgets.active.expansion     = 1.0;
+
+        // ── Selection (slider fill, text selection) ───────────────────────────
+        v.selection.bg_fill            = t.accent.linear_multiply(0.85);
+        v.selection.stroke             = Stroke::new(1.0, t.accent);
+
+        // ── Text ──────────────────────────────────────────────────────────────
+        v.override_text_color          = Some(t.text);
+
+        // ── Window chrome ─────────────────────────────────────────────────────
+        v.window_rounding              = Rounding::same(6.0);
+        v.window_shadow               = eframe::egui::epaint::Shadow::NONE;
 
         style.visuals = v;
+
+        // ── Spacing ───────────────────────────────────────────────────────────
+        style.spacing.item_spacing     = eframe::egui::vec2(6.0, 4.0);
+        style.spacing.button_padding   = eframe::egui::vec2(10.0, 5.0);
+        style.spacing.slider_width     = 140.0;
+        style.spacing.interact_size    = eframe::egui::vec2(18.0, 18.0);
+
         ctx.set_style(style);
     }
 }
