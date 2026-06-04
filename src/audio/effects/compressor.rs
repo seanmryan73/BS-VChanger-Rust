@@ -34,3 +34,30 @@ impl AudioEffect for CompressorEffect {
 
     fn reset(&mut self) { self.envelope = 0.0; }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn loud_signal_is_reduced() {
+        // threshold 0.5, ratio 4:1
+        let mut e = CompressorEffect::new(0.5, 4.0, 0.001, 0.1);
+        // Loud steady signal well above threshold
+        let mut loud = vec![0.9f32; 4800];
+        e.process(&mut loud, 48_000);
+        let avg: f32 = loud.iter().map(|x| x.abs()).sum::<f32>() / loud.len() as f32;
+        assert!(avg < 0.9, "compressor did not reduce loud signal");
+    }
+
+    #[test]
+    fn quiet_signal_passes_through() {
+        let mut e = CompressorEffect::new(0.5, 4.0, 0.001, 0.1);
+        let mut quiet = vec![0.1f32; 480];
+        let orig: Vec<f32> = quiet.clone();
+        e.process(&mut quiet, 48_000);
+        for (a, b) in quiet.iter().zip(orig.iter()) {
+            assert!((a - b).abs() < 0.01, "quiet signal should not be compressed");
+        }
+    }
+}

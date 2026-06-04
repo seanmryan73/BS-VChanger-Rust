@@ -1,5 +1,6 @@
 pub mod built_in;
 pub mod effect_types;
+pub mod factory;
 pub mod profile;
 pub mod repository;
 
