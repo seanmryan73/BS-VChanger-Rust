@@ -546,9 +546,15 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
         .show(ctx, |ui| {
             section_header(ui, "DEVICES", theme.accent);
 
+            // Snapshot device config before controls render
+            let snap_input           = app.selected_input.clone();
+            let snap_monitor_enabled = app.monitor_enabled;
+            let snap_monitor         = app.selected_monitor.clone();
+            let snap_virtual_enabled = app.virtual_enabled;
+            let snap_virtual         = app.selected_virtual.clone();
+
             // Input
             ui.label("Input");
-            let prev_input = app.selected_input.clone();
             egui::ComboBox::from_id_salt("input_dev")
                 .selected_text(&app.selected_input)
                 .width(190.0)
@@ -557,13 +563,11 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                         ui.selectable_value(&mut app.selected_input, name.clone(), &name);
                     }
                 });
-            if app.selected_input != prev_input { app.settings_dirty = true; }
 
             ui.add_space(4.0);
 
             // Monitor
             ui.checkbox(&mut app.monitor_enabled, "Monitor");
-            let prev_mon = app.selected_monitor.clone();
             ui.add_enabled_ui(app.monitor_enabled, |ui| {
                 egui::ComboBox::from_id_salt("monitor_dev")
                     .selected_text(&app.selected_monitor)
@@ -574,13 +578,11 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                         }
                     });
             });
-            if app.selected_monitor != prev_mon { app.settings_dirty = true; }
 
             ui.add_space(4.0);
 
             // Virtual
             ui.checkbox(&mut app.virtual_enabled, "Virtual");
-            let prev_virt = app.selected_virtual.clone();
             ui.add_enabled_ui(app.virtual_enabled, |ui| {
                 egui::ComboBox::from_id_salt("virtual_dev")
                     .selected_text(if app.selected_virtual.is_empty() { "— select —" } else { &app.selected_virtual })
@@ -591,7 +593,20 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                         }
                     });
             });
-            if app.selected_virtual != prev_virt { app.settings_dirty = true; }
+
+            // If any device config changed, persist and restart engine if running
+            let device_changed = app.selected_input   != snap_input
+                || app.monitor_enabled != snap_monitor_enabled
+                || app.selected_monitor != snap_monitor
+                || app.virtual_enabled  != snap_virtual_enabled
+                || app.selected_virtual != snap_virtual;
+            if device_changed {
+                app.settings_dirty = true;
+                if app.engine.is_some() {
+                    app.stop_engine();
+                    app.start_engine();
+                }
+            }
 
             ui.add_space(12.0);
             ui.separator();
