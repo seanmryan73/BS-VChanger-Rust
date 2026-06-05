@@ -597,10 +597,18 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
             ui.separator();
             ui.add_space(6.0);
 
-            // Input gain
-            ui.label(RichText::new("Input Gain").color(theme.text_muted).small());
+            // Mic volume
             let mut gain = f32::from_bits(app.input_gain.load(Ordering::Relaxed));
             let prev_gain = gain;
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Mic Volume").color(theme.text_muted).small());
+                if gain != 1.0 && ui.add(
+                    egui::Button::new(RichText::new("↺").small().color(theme.text_muted))
+                        .frame(false)
+                ).on_hover_text("Reset to default (1.00×)").clicked() {
+                    gain = 1.0;
+                }
+            });
             ui.add(egui::Slider::new(&mut gain, 0.0f32..=4.0f32)
                 .text("×")
                 .fixed_decimals(2)
