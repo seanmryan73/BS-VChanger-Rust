@@ -11,7 +11,7 @@ pub fn show(ctx: &Context, open: &mut bool, on_reset: &mut bool) {
     egui::Window::new("BS-VChanger — Help & About")
         .collapsible(false)
         .resizable(false)
-        .fixed_size([460.0, 620.0])
+        .fixed_size([480.0, 680.0])
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
@@ -41,11 +41,27 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.label(RichText::new("Quick Start").strong());
     ui.add_space(4.0);
 
+    ui.label(RichText::new("For calls (Teams / Zoom / Discord):").color(accent).small().strong());
+    ui.add_space(2.0);
     for (n, step) in [
         ("1.", "Select your microphone in the Input dropdown."),
-        ("2.", "Select your speakers or headphones as Monitor output."),
-        ("3.", "Choose a profile from the left panel (start with Clean Voice)."),
-        ("4.", "Click Start — you will hear your processed voice through the monitor."),
+        ("2.", "Enable Virtual and select \"CABLE Input\" as the output."),
+        ("3.", "Leave Monitor OFF — see the Troubleshooting section below for why."),
+        ("4.", "In your meeting app, set the microphone to \"CABLE Output\"."),
+        ("5.", "Choose a profile and click Start."),
+    ] {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(n).color(accent).strong());
+            ui.label(step);
+        });
+    }
+    ui.add_space(6.0);
+    ui.label(RichText::new("For personal listening / testing:").color(accent).small().strong());
+    ui.add_space(2.0);
+    for (n, step) in [
+        ("1.", "Select your microphone in the Input dropdown."),
+        ("2.", "Enable Monitor and select your headphones or speakers."),
+        ("3.", "Choose a profile and click Start — you will hear your processed voice."),
     ] {
         ui.horizontal(|ui| {
             ui.label(RichText::new(n).color(accent).strong());
@@ -88,14 +104,22 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.add_space(4.0);
     ui.label(
         "The Virtual output sends your processed voice to a virtual microphone \
-         that Discord, Zoom, OBS and other apps can see as an input device.",
+         that Teams, Discord, Zoom, OBS and other apps can use as their input.",
     );
     ui.add_space(4.0);
     ui.horizontal_wrapped(|ui| {
-        ui.label(RichText::new("Requires:").strong());
-        ui.label("Install VB-CABLE from vb-audio.com (free). After install, \
-                  select \"CABLE Input\" as the Virtual output here, then set \
-                  \"CABLE Output\" as the microphone inside your meeting app.");
+        ui.label(RichText::new("Setup:").strong());
+        ui.label("Install VB-CABLE from vb-audio.com (free). Select \
+                  \"CABLE Input\" as the Virtual output here, then set \
+                  \"CABLE Output\" as the microphone in your meeting app.");
+    });
+    ui.add_space(4.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new("Note:").strong().color(warn));
+        ui.label(RichText::new(
+            "VB-CABLE passes audio internally — you will not hear it \
+             through your own speakers. Use Monitor for personal feedback."
+        ).color(warn));
     });
 
     ui.add_space(10.0);
@@ -119,6 +143,40 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     }
 
     ui.add_space(12.0);
+    ui.separator();
+    ui.add_space(8.0);
+
+    // ── Troubleshooting ───────────────────────────────────────────────────────
+    ui.label(RichText::new("Troubleshooting").strong());
+    ui.add_space(4.0);
+
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new("⚠").color(warn).strong());
+        ui.label(RichText::new("Monitor ON + Virtual ON = Teams/Zoom gets silence.").strong());
+    });
+    ui.add_space(2.0);
+    ui.label(
+        "When Monitor is active, your processed voice plays through your speakers. \
+         Teams and Zoom run echo cancellation (AEC) that compares what your \
+         speakers are playing against what your microphone (CABLE Output) is \
+         receiving. Because both carry the same signal, AEC identifies it as \
+         echo and cancels it — leaving silence.",
+    );
+    ui.add_space(4.0);
+    ui.label(RichText::new("Fix:").strong().color(accent));
+    for fix in [
+        "For calls — disable Monitor, use Virtual only.",
+        "For personal feedback — disable Virtual, use Monitor only.",
+        "If you need both: disable echo cancellation in Teams (Settings → Devices \
+         → Noise suppression → Off / Echo cancellation → Off).",
+    ] {
+        ui.horizontal_wrapped(|ui| {
+            ui.label(RichText::new("•").color(accent));
+            ui.label(fix);
+        });
+    }
+
+    ui.add_space(10.0);
     ui.separator();
     ui.add_space(8.0);
 
