@@ -11,7 +11,7 @@ pub fn show(ctx: &Context, open: &mut bool, on_reset: &mut bool) {
     egui::Window::new("BS-VChanger — Help & About")
         .collapsible(false)
         .resizable(false)
-        .fixed_size([480.0, 680.0])
+        .fixed_size([480.0, 740.0])
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
@@ -175,6 +175,47 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
             ui.label(fix);
         });
     }
+
+    ui.add_space(10.0);
+    ui.separator();
+    ui.add_space(8.0);
+
+    // ── Files & Installation ──────────────────────────────────────────────────
+    ui.label(RichText::new("Files & Installation").strong());
+    ui.add_space(4.0);
+
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new("Standalone:").strong());
+        ui.label("BS-VChanger is a single EXE with no installer and no extra DLLs. \
+                  Copy it anywhere and run it.");
+    });
+    ui.add_space(6.0);
+
+    ui.label(RichText::new("Data files are stored here:").color(muted).small());
+    ui.add_space(2.0);
+
+    let appdata = std::env::var("APPDATA").unwrap_or_else(|_| "%APPDATA%".into());
+    let data_dir = format!("{appdata}\\BS-VChanger-Rust\\");
+    ui.label(RichText::new(&data_dir).color(accent).monospace().small());
+    ui.add_space(4.0);
+
+    for (file, desc) in [
+        ("settings.json",       "Device selection, theme, mic volume, last profile"),
+        ("user_profiles.json",  "Your saved custom profiles"),
+    ] {
+        ui.horizontal_wrapped(|ui| {
+            ui.label(RichText::new(file).monospace().color(accent).small());
+            ui.label(RichText::new(format!("— {desc}")).color(muted).small());
+        });
+    }
+    ui.add_space(4.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new("Tip:").strong().color(muted).small());
+        ui.label(RichText::new(
+            "Delete settings.json to reset all preferences, or use \
+             \"Reset to Defaults\" below. The EXE writes nothing to its own folder."
+        ).small());
+    });
 
     ui.add_space(10.0);
     ui.separator();
