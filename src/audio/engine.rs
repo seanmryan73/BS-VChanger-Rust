@@ -103,10 +103,7 @@ impl RealtimeAudioEngine {
         }
         .map_err(|e| format!("Input stream error: {e}"))?;
 
-        in_stream.play().map_err(|e| e.to_string())?;
-        streams.push(in_stream);
-
-        // ── Output streams ────────────────────────────────────────────────────
+        // ── Output streams (built before input starts so consumers are ready) ──
         // Pass the input sample_rate so output probing prioritises the same
         // rate — mismatched rates cause pitch drift and ring-buffer crackling.
         if let Some(name) = &config.monitor_name {
@@ -115,6 +112,10 @@ impl RealtimeAudioEngine {
         if let Some(name) = &config.virtual_name {
             streams.push(build_output_stream(name, virt_cons, Arc::clone(&last_error), sample_rate)?);
         }
+
+        // ── Start input last so ring buffers never overflow before consumers ──
+        in_stream.play().map_err(|e| e.to_string())?;
+        streams.push(in_stream);
 
         Ok(Self { _streams: streams, effect_chain, last_error, sample_rate })
     }
