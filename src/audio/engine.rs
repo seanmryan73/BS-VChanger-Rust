@@ -101,11 +101,13 @@ impl RealtimeAudioEngine {
         streams.push(in_stream);
 
         // ── Output streams ────────────────────────────────────────────────────
+        // Pass the input sample_rate so output probing prioritises the same
+        // rate — mismatched rates cause pitch drift and ring-buffer crackling.
         if let Some(name) = &config.monitor_name {
-            streams.push(build_output_stream(name, mon_cons, Arc::clone(&last_error))?);
+            streams.push(build_output_stream(name, mon_cons, Arc::clone(&last_error), sample_rate)?);
         }
         if let Some(name) = &config.virtual_name {
-            streams.push(build_output_stream(name, virt_cons, Arc::clone(&last_error))?);
+            streams.push(build_output_stream(name, virt_cons, Arc::clone(&last_error), sample_rate)?);
         }
 
         Ok(Self { _streams: streams, effect_chain, last_error, sample_rate })
@@ -136,8 +138,12 @@ fn probe_input_config(dev: &cpal::Device) -> Result<(StreamConfig, SampleFormat)
     Err("no compatible input config found".into())
 }
 
-fn probe_output_config(dev: &cpal::Device) -> Result<(StreamConfig, SampleFormat), String> {
-    for (cfg, fmt) in output_candidates(dev) {
+fn probe_output_config(dev: &cpal::Device, preferred_rate: u32) -> Result<(StreamConfig, SampleFormat), String> {
+    // Try preferred rate first (avoids resampling). If not supported, fall
+    // back to any working config — the caller will resample as needed.
+    let preferred = output_candidates_at_rate(dev, preferred_rate);
+    let fallback  = output_candidates_any_rate(dev, preferred_rate);
+    for (cfg, fmt) in preferred.into_iter().chain(fallback) {
         let ok = match fmt {
             SampleFormat::F32 => dev.build_output_stream(&cfg, |_: &mut [f32], _| {}, |_| {}, None).is_ok(),
             SampleFormat::I16 => dev.build_output_stream(&cfg, |_: &mut [i16], _| {}, |_| {}, None).is_ok(),
@@ -152,38 +158,69 @@ fn probe_output_config(dev: &cpal::Device) -> Result<(StreamConfig, SampleFormat
 /// Candidate list: default config first, then supported ranges ordered by
 /// preferred format and preferred sample rate.
 fn input_candidates(dev: &cpal::Device) -> Vec<(StreamConfig, SampleFormat)> {
-    candidates_from(
+    candidates_from_rates(
         dev.default_input_config().ok(),
         dev.supported_input_configs().ok(),
+        PREFERRED_RATES,
     )
 }
 
-fn output_candidates(dev: &cpal::Device) -> Vec<(StreamConfig, SampleFormat)> {
-    candidates_from(
+/// Returns only output configs that match `rate` exactly, ordered by format
+/// preference. Intentionally ignores the device default — the caller wants a
+/// specific rate, not whatever Windows happens to have configured.
+fn output_candidates_at_rate(dev: &cpal::Device, rate: u32) -> Vec<(StreamConfig, SampleFormat)> {
+    let mut out = Vec::new();
+    let ranges = match dev.supported_output_configs() {
+        Ok(r) => r.collect::<Vec<_>>(),
+        Err(_) => return out,
+    };
+    for &fmt in PREFERRED_FORMATS {
+        for range in &ranges {
+            if range.sample_format() == fmt
+                && range.min_sample_rate().0 <= rate
+                && range.max_sample_rate().0 >= rate
+            {
+                out.push((StreamConfig {
+                    channels:    range.channels(),
+                    sample_rate: cpal::SampleRate(rate),
+                    buffer_size: cpal::BufferSize::Default,
+                }, fmt));
+            }
+        }
+    }
+    out
+}
+
+/// Fallback: all supported output configs EXCEPT preferred_rate (already tried).
+fn output_candidates_any_rate(dev: &cpal::Device, skip_rate: u32) -> Vec<(StreamConfig, SampleFormat)> {
+    let rates: Vec<u32> = PREFERRED_RATES.iter().copied().filter(|&r| r != skip_rate).collect();
+    candidates_from_rates(
         dev.default_output_config().ok(),
         dev.supported_output_configs().ok(),
+        &rates,
     )
 }
 
-fn candidates_from(
+fn candidates_from_rates(
     default: Option<SupportedStreamConfig>,
     supported: Option<impl Iterator<Item = cpal::SupportedStreamConfigRange>>,
+    rates: &[u32],
 ) -> Vec<(StreamConfig, SampleFormat)> {
     let mut out: Vec<(StreamConfig, SampleFormat)> = Vec::new();
 
-    // Default config first
-    if let Some(cfg) = default {
+    // Default config first (may be overridden below if a preferred rate matches)
+    if let Some(cfg) = &default {
         let fmt = cfg.sample_format();
         if PREFERRED_FORMATS.contains(&fmt) {
-            out.push((to_stream_config(&cfg), fmt));
+            out.push((to_stream_config(cfg), fmt));
         }
     }
 
-    // Enumerated configs: iterate format preference × rate preference
+    // Enumerated configs: iterate format preference × caller-supplied rate order
     if let Some(ranges) = supported {
         let ranges: Vec<_> = ranges.collect();
         for &fmt in PREFERRED_FORMATS {
-            for &rate in PREFERRED_RATES {
+            for &rate in rates {
                 for range in &ranges {
                     if range.sample_format() == fmt
                         && range.min_sample_rate().0 <= rate
@@ -194,7 +231,6 @@ fn candidates_from(
                             sample_rate: cpal::SampleRate(rate),
                             buffer_size: cpal::BufferSize::Default,
                         };
-                        // Skip exact duplicates
                         if !out.iter().any(|(c, f)| *f == fmt
                             && c.channels == cfg.channels
                             && c.sample_rate == cfg.sample_rate)
@@ -218,40 +254,100 @@ fn to_stream_config(s: &SupportedStreamConfig) -> StreamConfig {
     }
 }
 
+// ── Linear-interpolation resampler ───────────────────────────────────────────
+
+/// Sample-by-sample linear resampler. Works with any callback size.
+/// Uses rubato-quality interpolation isn't needed here — at voice-changer
+/// rates (44.1 k↔48 k) linear interp aliases above ~18 kHz, well above voice.
+struct OutputResampler {
+    ratio: f64, // input_rate / output_rate
+    phase: f64, // fractional position between prev and next input samples
+    prev:  f32,
+    next:  f32,
+}
+
+impl OutputResampler {
+    fn new(input_rate: u32, output_rate: u32) -> Self {
+        Self { ratio: input_rate as f64 / output_rate as f64, phase: 0.0, prev: 0.0, next: 0.0 }
+    }
+
+    fn next_sample(&mut self, cons: &mut impl Consumer<Item = f32>) -> f32 {
+        // Interpolate at current phase, then advance
+        let out = self.prev + (self.next - self.prev) * self.phase as f32;
+        self.phase += self.ratio;
+        while self.phase >= 1.0 {
+            self.prev = self.next;
+            self.next = cons.try_pop().unwrap_or(self.prev);
+            self.phase -= 1.0;
+        }
+        out
+    }
+}
+
 // ── Output stream builder ─────────────────────────────────────────────────────
 
 fn build_output_stream(
     device_name: &str,
     mut cons: impl Consumer<Item = f32> + Send + 'static,
     last_error: Arc<Mutex<Option<String>>>,
+    input_rate: u32,
 ) -> Result<Stream, String> {
     let dev = devices::find_output_device(device_name)
         .ok_or_else(|| format!("Output device '{device_name}' not found"))?;
 
-    // Probe finds the first config that WASAPI will actually open.
-    let (cfg, fmt) = probe_output_config(&dev)
+    let (cfg, fmt) = probe_output_config(&dev, input_rate)
         .map_err(|e| format!("Output '{device_name}': {e}"))?;
 
-    let channels = cfg.channels as usize;
-    let err      = Arc::clone(&last_error);
+    let output_rate = cfg.sample_rate.0;
+    let channels    = cfg.channels as usize;
+    let err         = Arc::clone(&last_error);
 
-    let stream = match fmt {
-        SampleFormat::F32 => dev.build_output_stream(
-            &cfg,
-            move |data: &mut [f32], _| { fill_f32(data, channels, &mut cons); },
-            make_err_cb(err), None,
-        ),
-        SampleFormat::I16 => dev.build_output_stream(
-            &cfg,
-            move |data: &mut [i16], _| { fill_i16(data, channels, &mut cons); },
-            make_err_cb(err), None,
-        ),
-        SampleFormat::U16 => dev.build_output_stream(
-            &cfg,
-            move |data: &mut [u16], _| { fill_u16(data, channels, &mut cons); },
-            make_err_cb(err), None,
-        ),
-        fmt => return Err(format!("Output '{device_name}': unsupported format {fmt:?}")),
+    let stream = if output_rate != input_rate {
+        // Rates differ — resample on the fly so pitch and tempo are correct.
+        let mut rs = OutputResampler::new(input_rate, output_rate);
+        match fmt {
+            SampleFormat::F32 => dev.build_output_stream(&cfg, move |data: &mut [f32], _| {
+                let frames = data.len() / channels;
+                for i in 0..frames {
+                    let s = rs.next_sample(&mut cons);
+                    for c in 0..channels { data[i * channels + c] = s; }
+                }
+            }, make_err_cb(err), None),
+            SampleFormat::I16 => dev.build_output_stream(&cfg, move |data: &mut [i16], _| {
+                let frames = data.len() / channels;
+                for i in 0..frames {
+                    let s = rs.next_sample(&mut cons);
+                    let v = (s * 32_767.0).clamp(-32_768.0, 32_767.0) as i16;
+                    for c in 0..channels { data[i * channels + c] = v; }
+                }
+            }, make_err_cb(err), None),
+            SampleFormat::U16 => dev.build_output_stream(&cfg, move |data: &mut [u16], _| {
+                let frames = data.len() / channels;
+                for i in 0..frames {
+                    let s = rs.next_sample(&mut cons);
+                    let v = ((s + 1.0) * 32_767.5).clamp(0.0, 65_535.0) as u16;
+                    for c in 0..channels { data[i * channels + c] = v; }
+                }
+            }, make_err_cb(err), None),
+            fmt => return Err(format!("Output '{device_name}': unsupported format {fmt:?}")),
+        }
+    } else {
+        // Rates match — direct fill, no resampling overhead.
+        match fmt {
+            SampleFormat::F32 => dev.build_output_stream(
+                &cfg, move |data: &mut [f32], _| { fill_f32(data, channels, &mut cons); },
+                make_err_cb(err), None,
+            ),
+            SampleFormat::I16 => dev.build_output_stream(
+                &cfg, move |data: &mut [i16], _| { fill_i16(data, channels, &mut cons); },
+                make_err_cb(err), None,
+            ),
+            SampleFormat::U16 => dev.build_output_stream(
+                &cfg, move |data: &mut [u16], _| { fill_u16(data, channels, &mut cons); },
+                make_err_cb(err), None,
+            ),
+            fmt => return Err(format!("Output '{device_name}': unsupported format {fmt:?}")),
+        }
     }
     .map_err(|e| format!("Output '{device_name}': {e}"))?;
 

@@ -3,6 +3,9 @@ use super::factory::fx;
 
 pub fn all() -> Vec<VoiceProfile> {
     vec![
+        // ── Passthrough ───────────────────────────────────────────────────────
+        VoiceProfile::built_in("Passthrough", vec![]),
+
         // ── Clean voice (primary use-case) ────────────────────────────────────
         VoiceProfile::built_in("Clean Voice", vec![
             fx(CleanMic,         true,  &[]),

@@ -21,10 +21,10 @@ use crate::ui::{about_dialog, spectrum_panel::SpectrumPanel};
 
 // ── Grouped profile categories (built-in only) ────────────────────────────────
 const PROFILE_GROUPS: &[(&str, usize, usize)] = &[
-    ("CLEAN VOICE",       0,  8),
-    ("PITCH & CHARACTER", 8,  16),
-    ("SPACE & ROOM",      16, 19),
-    ("CREATIVE",          19, 24),
+    ("CLEAN VOICE",       1,  9),
+    ("PITCH & CHARACTER", 9,  17),
+    ("SPACE & ROOM",      17, 20),
+    ("CREATIVE",          20, 25),
 ];
 
 pub struct App {
@@ -170,6 +170,21 @@ impl App {
         self.profiles.push(profile);
         self.new_profile_name.clear();
         self.persist_user_profiles();
+    }
+
+    fn reset_profile(&mut self) {
+        if let Some(idx) = self.selected_profile {
+            self.live_effects = self.profiles[idx].effects.clone();
+            self.apply_chain();
+        }
+    }
+
+    fn update_user_profile(&mut self, relative_idx: usize) {
+        let abs = self.built_in_count + relative_idx;
+        if abs < self.profiles.len() {
+            self.profiles[abs].effects = self.live_effects.clone();
+            self.persist_user_profiles();
+        }
     }
 
     fn delete_user_profile(&mut self, relative_idx: usize) {
@@ -409,6 +424,18 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
             egui::ScrollArea::vertical()
                 .max_height(ui.available_height() - 70.0)
                 .show(ui, |ui| {
+                    // ── Passthrough (index 0, no effects) ─────────────────────
+                    {
+                        let selected = app.selected_profile == Some(0);
+                        let resp = ui.selectable_label(
+                            selected,
+                            RichText::new("Passthrough")
+                                .color(if selected { Color32::WHITE } else { theme.text }),
+                        );
+                        if resp.clicked() && !selected { app.select_profile(0); }
+                    }
+                    ui.add_space(4.0);
+
                     // ── Built-in profiles with collapsible groups ──────────────
                     for (group_idx, &(group_name, start, end)) in PROFILE_GROUPS.iter().enumerate() {
                         if group_idx > 0 { ui.add_space(4.0); }
@@ -444,10 +471,13 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                         ui.add_space(2.0);
 
                         let mut to_delete: Option<usize> = None;
+                        let mut to_update: Option<usize> = None;
                         for rel in 0..user_count {
                             let abs = app.built_in_count + rel;
                             let selected = app.selected_profile == Some(abs);
                             let name = app.profiles[abs].name.clone();
+                            let is_dirty = selected
+                                && app.live_effects != app.profiles[abs].effects;
                             ui.horizontal(|ui| {
                                 let resp = ui.selectable_label(
                                     selected,
@@ -461,10 +491,18 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                                     ).frame(false)).clicked() {
                                         to_delete = Some(rel);
                                     }
+                                    if is_dirty && ui.add(egui::Button::new(
+                                        RichText::new("↑").color(Color32::from_rgb(0x44, 0xaa, 0x55))
+                                    ).frame(false))
+                                    .on_hover_text("Save changes to this profile")
+                                    .clicked() {
+                                        to_update = Some(rel);
+                                    }
                                 });
                             });
                         }
                         if let Some(rel) = to_delete { app.delete_user_profile(rel); }
+                        if let Some(rel) = to_update { app.update_user_profile(rel); }
                     }
                 });
 
@@ -618,7 +656,20 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
         });
 
         ui.add_space(4.0);
-        section_header(ui, "EFFECT CHAIN", theme.accent);
+        ui.horizontal(|ui| {
+            section_header(ui, "EFFECT CHAIN", theme.accent);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if let Some(idx) = app.selected_profile {
+                    let is_dirty = app.live_effects != app.profiles[idx].effects;
+                    if is_dirty && ui.add(
+                        egui::Button::new(RichText::new("Reset").color(Color32::WHITE).small())
+                            .fill(Color32::from_rgb(0x88, 0x44, 0x22))
+                    ).on_hover_text("Discard changes and reload profile defaults").clicked() {
+                        app.reset_profile();
+                    }
+                }
+            });
+        });
 
         if app.live_effects.is_empty() {
             ui.centered_and_justified(|ui| {
@@ -692,8 +743,14 @@ fn effect_summary(t: EffectType, params: &HashMap<String, f64>) -> String {
     match t {
         EffectType::Gain =>
             format!("{:.2}×", p("gain", 1.0)),
-        EffectType::NoiseSuppression =>
-            format!("{:.0}%", p("strength", 1.0) * 100.0),
+        EffectType::NoiseSuppression => {
+            let thr = p("threshold", 0.0);
+            if thr > 0.001 {
+                format!("{:.0}%  gate {:.0}%", p("strength", 1.0) * 100.0, thr * 100.0)
+            } else {
+                format!("{:.0}%", p("strength", 1.0) * 100.0)
+            }
+        }
         EffectType::PitchShift => {
             let st = p("semitones", 0.0);
             if st >= 0.0 { format!("+{st:.1} st") } else { format!("{st:.1} st") }
@@ -720,7 +777,8 @@ fn effect_summary(t: EffectType, params: &HashMap<String, f64>) -> String {
             format!("{:.0} Hz", p("carrier_freq", 200.0)),
         EffectType::Robot =>
             format!("{:.0} Hz", p("pitch_hz", 100.0)),
-        EffectType::CleanMic => String::new(),
+        EffectType::CleanMic =>
+            format!("{:.0} Hz", p("cutoff_hz", 20.0)),
     }
 }
 
@@ -738,10 +796,13 @@ fn effect_params_ui(ui: &mut Ui, t: EffectType, params: &mut HashMap<String, f64
     }
 
     match t {
-        EffectType::CleanMic => {}
+        EffectType::CleanMic =>
+            { slider!("Cutoff Hz", "cutoff_hz", 20.0, 400.0, 20.0); }
 
-        EffectType::NoiseSuppression =>
-            { slider!("Strength", "strength", 0.0, 1.0, 1.0); }
+        EffectType::NoiseSuppression => {
+            slider!("Strength",       "strength",  0.0, 1.0, 1.0);
+            slider!("Gate Threshold", "threshold", 0.0, 1.0, 0.0);
+        }
 
         EffectType::Gain =>
             { slider!("Gain", "gain", 0.0, 4.0, 1.0); }

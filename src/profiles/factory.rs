@@ -33,10 +33,13 @@ pub fn build_effect(cfg: &EffectConfig) -> Box<dyn AudioEffect> {
             Box::new(GainEffect::new(p(cfg, "gain", 1.0))),
 
         EffectType::CleanMic =>
-            Box::new(CleanMicEffect::new()),
+            Box::new(CleanMicEffect::new(p(cfg, "cutoff_hz", 20.0))),
 
         EffectType::NoiseSuppression =>
-            Box::new(NoiseSuppressionEffect::new(p(cfg, "strength", 1.0))),
+            Box::new(NoiseSuppressionEffect::new(
+                p(cfg, "strength",  1.0),
+                p(cfg, "threshold", 0.0),
+            )),
 
         EffectType::PitchShift =>
             Box::new(PitchResampleEffect::new(p(cfg, "semitones", 0.0))),
