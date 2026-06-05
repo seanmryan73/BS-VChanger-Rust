@@ -293,7 +293,6 @@ impl eframe::App for App {
         show_header(self, ctx);
         show_profile_panel(self, ctx);
         show_device_panel(self, ctx);
-        show_spectrum_panel(self, ctx);
         show_effect_panel(self, ctx);
 
         if self.settings_dirty {
@@ -604,24 +603,21 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
         });
 }
 
-// ── Bottom panel: Spectrum ────────────────────────────────────────────────────
-
-fn show_spectrum_panel(app: &mut App, ctx: &Context) {
-    let accent = app.theme.current().accent;
-    let active  = app.engine.is_some();
-    egui::TopBottomPanel::bottom("spectrum")
-        .exact_height(110.0)
-        .show(ctx, |ui| {
-            app.spectrum_panel.show(ui, accent, active);
-        });
-}
-
-// ── Center panel: Effect chain ────────────────────────────────────────────────
+// ── Center panel: Spectrum + Effect chain ────────────────────────────────────
 
 fn show_effect_panel(app: &mut App, ctx: &Context) {
-    let theme = app.theme.current();
+    let theme  = app.theme.current();
+    let accent = theme.accent;
+    let active = app.engine.is_some();
 
     egui::CentralPanel::default().show(ctx, |ui| {
+        // Spectrum fills top ~40% of the center panel
+        let spec_height = (ui.available_height() * 0.40).clamp(140.0, 260.0);
+        ui.allocate_ui(egui::vec2(ui.available_width(), spec_height), |ui| {
+            app.spectrum_panel.show(ui, accent, active);
+        });
+
+        ui.add_space(4.0);
         section_header(ui, "EFFECT CHAIN", theme.accent);
 
         if app.live_effects.is_empty() {
@@ -635,8 +631,8 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
 
         egui::ScrollArea::vertical().show(ui, |ui| {
             for idx in 0..app.live_effects.len() {
-                let cfg   = &mut app.live_effects[idx];
-                let label = effect_display_name(cfg.effect_type);
+                let cfg     = &mut app.live_effects[idx];
+                let label   = effect_display_name(cfg.effect_type);
                 let summary = effect_summary(cfg.effect_type, &cfg.params);
 
                 let id = egui::Id::new(("fx", idx));

@@ -13,20 +13,38 @@ pub enum ThemeChoice {
     Uranus,
     Neptune,
     Pluto,
+    Zeus,
+    Hades,
+    Poseidon,
+    Aphrodite,
+    Ares,
+    Athena,
+    Apollo,
+    Artemis,
+    Dionysus,
 }
 
 impl ThemeChoice {
     pub fn label(self) -> &'static str {
         match self {
-            ThemeChoice::Mercury => "Mercury",
-            ThemeChoice::Venus   => "Venus",
-            ThemeChoice::Earth   => "Earth",
-            ThemeChoice::Mars    => "Mars",
-            ThemeChoice::Jupiter => "Jupiter",
-            ThemeChoice::Saturn  => "Saturn",
-            ThemeChoice::Uranus  => "Uranus",
-            ThemeChoice::Neptune => "Neptune",
-            ThemeChoice::Pluto   => "Pluto",
+            ThemeChoice::Mercury   => "Mercury",
+            ThemeChoice::Venus     => "Venus",
+            ThemeChoice::Earth     => "Earth",
+            ThemeChoice::Mars      => "Mars",
+            ThemeChoice::Jupiter   => "Jupiter",
+            ThemeChoice::Saturn    => "Saturn",
+            ThemeChoice::Uranus    => "Uranus",
+            ThemeChoice::Neptune   => "Neptune",
+            ThemeChoice::Pluto     => "Pluto",
+            ThemeChoice::Zeus      => "Zeus",
+            ThemeChoice::Hades     => "Hades",
+            ThemeChoice::Poseidon  => "Poseidon",
+            ThemeChoice::Aphrodite => "Aphrodite",
+            ThemeChoice::Ares      => "Ares",
+            ThemeChoice::Athena    => "Athena",
+            ThemeChoice::Apollo    => "Apollo",
+            ThemeChoice::Artemis   => "Artemis",
+            ThemeChoice::Dionysus  => "Dionysus",
         }
     }
 
@@ -40,6 +58,15 @@ impl ThemeChoice {
         ThemeChoice::Uranus,
         ThemeChoice::Neptune,
         ThemeChoice::Pluto,
+        ThemeChoice::Zeus,
+        ThemeChoice::Hades,
+        ThemeChoice::Poseidon,
+        ThemeChoice::Aphrodite,
+        ThemeChoice::Ares,
+        ThemeChoice::Athena,
+        ThemeChoice::Apollo,
+        ThemeChoice::Artemis,
+        ThemeChoice::Dionysus,
     ];
 }
 
@@ -200,6 +227,150 @@ impl AppTheme {
             widget_border: Color32::from_rgb(0x99, 0x66, 0xaa),
         }
     }
+
+    /// Zeus — king of Olympus, lord of lightning. Storm black split by pure electric yellow.
+    pub fn zeus() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x05, 0x05, 0x08),
+            panel:         Color32::from_rgb(0x0a, 0x0c, 0x14),
+            accent:        Color32::from_rgb(0xff, 0xff, 0x00),
+            accent_alt:    Color32::from_rgb(0xff, 0xff, 0xff),
+            text:          Color32::from_rgb(0xf0, 0xf0, 0xff),
+            text_muted:    Color32::from_rgb(0x60, 0x60, 0xa0),
+            slider_track:  Color32::from_rgb(0x14, 0x14, 0x20),
+            selection_bg:  Color32::from_rgb(0x44, 0x44, 0xcc),
+            border:        Color32::from_rgb(0x1a, 0x1a, 0x2e),
+            widget_border: Color32::from_rgb(0x88, 0x88, 0xff),
+        }
+    }
+
+    /// Hades — lord of the dead. Pure black void with toxic underworld green and spectral purple.
+    pub fn hades() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x00, 0x00, 0x00),
+            panel:         Color32::from_rgb(0x0a, 0x00, 0x10),
+            accent:        Color32::from_rgb(0x00, 0xff, 0x66),
+            accent_alt:    Color32::from_rgb(0xcc, 0x00, 0xff),
+            text:          Color32::from_rgb(0xd0, 0xd0, 0xe0),
+            text_muted:    Color32::from_rgb(0x40, 0x50, 0x40),
+            slider_track:  Color32::from_rgb(0x0e, 0x00, 0x12),
+            selection_bg:  Color32::from_rgb(0x00, 0x44, 0x22),
+            border:        Color32::from_rgb(0x14, 0x00, 0x1c),
+            widget_border: Color32::from_rgb(0x00, 0x88, 0x44),
+        }
+    }
+
+    /// Poseidon — god of the sea. Abyssal deep with electric seafoam and blazing ocean blue.
+    pub fn poseidon() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x00, 0x0c, 0x12),
+            panel:         Color32::from_rgb(0x00, 0x18, 0x24),
+            accent:        Color32::from_rgb(0x00, 0xff, 0xcc),
+            accent_alt:    Color32::from_rgb(0x00, 0x99, 0xff),
+            text:          Color32::from_rgb(0xcc, 0xf8, 0xff),
+            text_muted:    Color32::from_rgb(0x22, 0x70, 0x88),
+            slider_track:  Color32::from_rgb(0x00, 0x24, 0x2e),
+            selection_bg:  Color32::from_rgb(0x00, 0x66, 0x55),
+            border:        Color32::from_rgb(0x00, 0x38, 0x48),
+            widget_border: Color32::from_rgb(0x00, 0xcc, 0xaa),
+        }
+    }
+
+    /// Aphrodite — goddess of love. Hot shocking magenta over dark rose-black. Unapologetically loud.
+    pub fn aphrodite() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x12, 0x00, 0x08),
+            panel:         Color32::from_rgb(0x20, 0x00, 0x10),
+            accent:        Color32::from_rgb(0xff, 0x00, 0xaa),
+            accent_alt:    Color32::from_rgb(0xff, 0x66, 0x88),
+            text:          Color32::from_rgb(0xff, 0xd0, 0xe8),
+            text_muted:    Color32::from_rgb(0x88, 0x55, 0x68),
+            slider_track:  Color32::from_rgb(0x2a, 0x00, 0x1a),
+            selection_bg:  Color32::from_rgb(0x88, 0x00, 0x44),
+            border:        Color32::from_rgb(0x38, 0x00, 0x22),
+            widget_border: Color32::from_rgb(0xdd, 0x00, 0x88),
+        }
+    }
+
+    /// Ares — god of war. Pure blood red and cold chrome silver on battle-black.
+    pub fn ares() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x10, 0x00, 0x00),
+            panel:         Color32::from_rgb(0x1a, 0x00, 0x00),
+            accent:        Color32::from_rgb(0xff, 0x00, 0x22),
+            accent_alt:    Color32::from_rgb(0xcc, 0xcc, 0xcc),
+            text:          Color32::from_rgb(0xf8, 0xe0, 0xe0),
+            text_muted:    Color32::from_rgb(0x88, 0x55, 0x55),
+            slider_track:  Color32::from_rgb(0x22, 0x00, 0x00),
+            selection_bg:  Color32::from_rgb(0x88, 0x00, 0x00),
+            border:        Color32::from_rgb(0x30, 0x00, 0x00),
+            widget_border: Color32::from_rgb(0xcc, 0x00, 0x11),
+        }
+    }
+
+    /// Athena — goddess of wisdom. Electric ultraviolet and pure gold on deep indigo.
+    pub fn athena() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x04, 0x00, 0x1a),
+            panel:         Color32::from_rgb(0x08, 0x00, 0x3a),
+            accent:        Color32::from_rgb(0xcc, 0x00, 0xff),
+            accent_alt:    Color32::from_rgb(0xff, 0xd7, 0x00),
+            text:          Color32::from_rgb(0xee, 0xdc, 0xff),
+            text_muted:    Color32::from_rgb(0x70, 0x40, 0xa0),
+            slider_track:  Color32::from_rgb(0x0e, 0x00, 0x40),
+            selection_bg:  Color32::from_rgb(0x55, 0x00, 0xaa),
+            border:        Color32::from_rgb(0x14, 0x00, 0x50),
+            widget_border: Color32::from_rgb(0x99, 0x00, 0xcc),
+        }
+    }
+
+    /// Apollo — god of the sun and music. Pure radiant solar yellow and blazing orange on amber-black.
+    pub fn apollo() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x0e, 0x06, 0x00),
+            panel:         Color32::from_rgb(0x1a, 0x0e, 0x00),
+            accent:        Color32::from_rgb(0xff, 0xee, 0x00),
+            accent_alt:    Color32::from_rgb(0xff, 0x88, 0x00),
+            text:          Color32::from_rgb(0xff, 0xf8, 0xcc),
+            text_muted:    Color32::from_rgb(0x99, 0x77, 0x22),
+            slider_track:  Color32::from_rgb(0x26, 0x14, 0x00),
+            selection_bg:  Color32::from_rgb(0x88, 0x66, 0x00),
+            border:        Color32::from_rgb(0x38, 0x20, 0x00),
+            widget_border: Color32::from_rgb(0xdd, 0xaa, 0x00),
+        }
+    }
+
+    /// Artemis — goddess of the moon and hunt. Cool moonlight silver and ice blue on dark charcoal.
+    pub fn artemis() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x06, 0x08, 0x10),
+            panel:         Color32::from_rgb(0x0c, 0x10, 0x20),
+            accent:        Color32::from_rgb(0xe8, 0xe8, 0xff),
+            accent_alt:    Color32::from_rgb(0x44, 0xdd, 0xff),
+            text:          Color32::from_rgb(0xf0, 0xf0, 0xff),
+            text_muted:    Color32::from_rgb(0x60, 0x70, 0x80),
+            slider_track:  Color32::from_rgb(0x10, 0x18, 0x28),
+            selection_bg:  Color32::from_rgb(0x3a, 0x3a, 0x88),
+            border:        Color32::from_rgb(0x1a, 0x20, 0x30),
+            widget_border: Color32::from_rgb(0xaa, 0xaa, 0xdd),
+        }
+    }
+
+    /// Dionysus — god of wine and ecstasy. Electric magenta and deep violet. Pure chaotic joy.
+    pub fn dionysus() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x0c, 0x00, 0x10),
+            panel:         Color32::from_rgb(0x18, 0x00, 0x24),
+            accent:        Color32::from_rgb(0xff, 0x00, 0xcc),
+            accent_alt:    Color32::from_rgb(0x88, 0x00, 0xff),
+            text:          Color32::from_rgb(0xf0, 0xd0, 0xff),
+            text_muted:    Color32::from_rgb(0x70, 0x40, 0xaa),
+            slider_track:  Color32::from_rgb(0x20, 0x00, 0x30),
+            selection_bg:  Color32::from_rgb(0x66, 0x00, 0x99),
+            border:        Color32::from_rgb(0x2a, 0x00, 0x40),
+            widget_border: Color32::from_rgb(0xcc, 0x00, 0xaa),
+        }
+    }
 }
 
 pub struct ThemeManager {
@@ -213,15 +384,24 @@ impl ThemeManager {
 
     pub fn current(&self) -> AppTheme {
         match self.choice {
-            ThemeChoice::Mercury => AppTheme::mercury(),
-            ThemeChoice::Venus   => AppTheme::venus(),
-            ThemeChoice::Earth   => AppTheme::earth(),
-            ThemeChoice::Mars    => AppTheme::mars(),
-            ThemeChoice::Jupiter => AppTheme::jupiter(),
-            ThemeChoice::Saturn  => AppTheme::saturn(),
-            ThemeChoice::Uranus  => AppTheme::uranus(),
-            ThemeChoice::Neptune => AppTheme::neptune(),
-            ThemeChoice::Pluto   => AppTheme::pluto(),
+            ThemeChoice::Mercury   => AppTheme::mercury(),
+            ThemeChoice::Venus     => AppTheme::venus(),
+            ThemeChoice::Earth     => AppTheme::earth(),
+            ThemeChoice::Mars      => AppTheme::mars(),
+            ThemeChoice::Jupiter   => AppTheme::jupiter(),
+            ThemeChoice::Saturn    => AppTheme::saturn(),
+            ThemeChoice::Uranus    => AppTheme::uranus(),
+            ThemeChoice::Neptune   => AppTheme::neptune(),
+            ThemeChoice::Pluto     => AppTheme::pluto(),
+            ThemeChoice::Zeus      => AppTheme::zeus(),
+            ThemeChoice::Hades     => AppTheme::hades(),
+            ThemeChoice::Poseidon  => AppTheme::poseidon(),
+            ThemeChoice::Aphrodite => AppTheme::aphrodite(),
+            ThemeChoice::Ares      => AppTheme::ares(),
+            ThemeChoice::Athena    => AppTheme::athena(),
+            ThemeChoice::Apollo    => AppTheme::apollo(),
+            ThemeChoice::Artemis   => AppTheme::artemis(),
+            ThemeChoice::Dionysus  => AppTheme::dionysus(),
         }
     }
 

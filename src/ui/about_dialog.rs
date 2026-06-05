@@ -11,7 +11,7 @@ pub fn show(ctx: &Context, open: &mut bool, on_reset: &mut bool) {
     egui::Window::new("BS-VChanger — Help & About")
         .collapsible(false)
         .resizable(false)
-        .fixed_size([460.0, 540.0])
+        .fixed_size([460.0, 620.0])
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
@@ -117,6 +117,44 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
             ui.label(tip);
         });
     }
+
+    ui.add_space(12.0);
+    ui.separator();
+    ui.add_space(8.0);
+
+    // ── Who Made This? ───────────────────────────────────────────────────────
+    ui.label(RichText::new("Who Made This?").strong());
+    ui.add_space(6.0);
+
+    ui.vertical_centered(|ui| {
+        ui.label(RichText::new("♫  BagPipes Software  ♫").size(18.0).strong().color(accent));
+        ui.add_space(2.0);
+        ui.label(
+            RichText::new("\"Making noise sound better, one Rust panic at a time\"")
+                .color(muted).italics().small(),
+        );
+    });
+
+    ui.add_space(8.0);
+
+    ui.horizontal(|ui| {
+        ui.label(RichText::new("Author").strong().color(muted).small());
+        ui.label(RichText::new("Sean Ryan").strong());
+    });
+    ui.horizontal(|ui| {
+        ui.label(RichText::new("Contact").strong().color(muted).small());
+        ui.label(RichText::new("seanmryan@gmail.com").color(accent));
+    });
+
+    ui.add_space(8.0);
+
+    ui.horizontal_wrapped(|ui| {
+        ui.label(RichText::new("P.S.").strong().color(warn));
+        ui.label(
+            "The \"BS\" in BS-VChanger stands for BagPipes Software. \
+             We know what you were thinking. We respect it.",
+        );
+    });
 
     ui.add_space(12.0);
     ui.separator();
