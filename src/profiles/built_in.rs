@@ -13,6 +13,13 @@ pub fn all() -> Vec<VoiceProfile> {
             fx(Compressor,       true,  &[("threshold",0.4),("ratio",3.0),("attack",0.005),("release",0.1)]),
             fx(Gain,             true,  &[("gain",1.0)]),
         ]),
+        VoiceProfile::built_in("BagPipe Podcast", vec![
+            fx(CleanMic,         true,  &[("cutoff_hz",20.0)]),
+            fx(NoiseSuppression, true,  &[("strength",1.0),("threshold",0.5)]),
+            fx(DeEsser,          true,  &[("threshold",0.3),("reduction",0.35)]),
+            fx(Compressor,       true,  &[("threshold",0.4),("ratio",3.0),("attack",0.005),("release",0.1)]),
+            fx(Gain,             true,  &[("gain",1.15)]),
+        ]),
         VoiceProfile::built_in("Clean Voice", vec![
             fx(CleanMic,         true,  &[]),
             fx(NoiseSuppression, true,  &[]),
