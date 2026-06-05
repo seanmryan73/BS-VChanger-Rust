@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use parking_lot::Mutex;
 use cpal::{Stream, StreamConfig, SampleFormat, SupportedStreamConfig, traits::*};
 use ringbuf::{HeapRb, traits::{Producer, Consumer, Split}};
@@ -16,6 +17,7 @@ pub struct StartConfig {
     pub input_name:   String,
     pub monitor_name: Option<String>,
     pub virtual_name: Option<String>,
+    pub input_gain:   Arc<AtomicU32>,
 }
 
 pub struct RealtimeAudioEngine {
@@ -56,13 +58,15 @@ impl RealtimeAudioEngine {
         let (mut virt_prod, virt_cons) = HeapRb::<f32>::new(RING_BUF_SAMPLES).split();
 
         // ── Input stream ──────────────────────────────────────────────────────
-        let chain  = Arc::clone(&effect_chain);
-        let err_in = Arc::clone(&last_error);
+        let chain      = Arc::clone(&effect_chain);
+        let err_in     = Arc::clone(&last_error);
+        let input_gain = Arc::clone(&config.input_gain);
 
         macro_rules! input_cb {
             ($ty:ty, $to_f32:expr) => {{
                 let spec  = spectrum.clone();
                 let level = input_level.clone();
+                let gain  = Arc::clone(&input_gain);
                 move |data: &[$ty], _: &cpal::InputCallbackInfo| {
                     let mut mono: Vec<f32> = if in_channels == 1 {
                         data.iter().map($to_f32).collect()
@@ -71,9 +75,11 @@ impl RealtimeAudioEngine {
                             .map(|ch| ch.iter().map($to_f32).sum::<f32>() / in_channels as f32)
                             .collect()
                     };
-                    level.push(&mono);                        // raw level before effects
+                    let g = f32::from_bits(gain.load(Ordering::Relaxed));
+                    if g != 1.0 { for s in &mut mono { *s *= g; } }
+                    level.push(&mono);
                     chain.lock().process(&mut mono, sample_rate);
-                    spec.push(&mono);                         // spectrum after effects
+                    spec.push(&mono);
                     if want_monitor { mon_prod.push_slice(&mono); }
                     if want_virtual { virt_prod.push_slice(&mono); }
                 }

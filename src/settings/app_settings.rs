@@ -14,11 +14,15 @@ pub struct AppSettings {
     pub category_expanded:   [bool; 4],
     #[serde(default)]
     pub auto_start:          bool,
+    #[serde(default = "default_input_gain")]
+    pub input_gain:          f32,
 }
 
 fn default_category_expanded() -> [bool; 4] {
     [true; 4]
 }
+
+fn default_input_gain() -> f32 { 1.0 }
 
 impl Default for AppSettings {
     fn default() -> Self {
@@ -32,6 +36,7 @@ impl Default for AppSettings {
             theme:               ThemeChoice::Earth,
             category_expanded:   [true; 4],
             auto_start:          false,
+            input_gain:          1.0,
         }
     }
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use parking_lot::Mutex;
 use eframe::egui::{self, Color32, Context, Pos2, RichText, Stroke, Ui};
 
@@ -59,6 +60,7 @@ pub struct App {
     spectrum:          SpectrumBuffer,
     spectrum_panel:    SpectrumPanel,
     input_level:       LevelBuffer,
+    input_gain:        Arc<AtomicU32>,
 
     // UI state
     show_about:        bool,
@@ -137,6 +139,7 @@ impl App {
             spectrum:          SpectrumBuffer::new(),
             spectrum_panel:    SpectrumPanel::new(),
             input_level:       LevelBuffer::new(),
+            input_gain:        Arc::new(AtomicU32::new(saved.input_gain.to_bits())),
             show_about:        false,
             category_expanded: saved.category_expanded,
             auto_start:        saved.auto_start,
@@ -213,6 +216,7 @@ impl App {
             virtual_name: self.virtual_enabled
                 .then(|| self.selected_virtual.clone())
                 .filter(|s| !s.is_empty()),
+            input_gain:   Arc::clone(&self.input_gain),
         };
         self.spectrum.clear();
         self.input_level.reset();
@@ -265,6 +269,7 @@ impl App {
             theme:               self.theme.choice,
             category_expanded:   self.category_expanded,
             auto_start:          self.auto_start,
+            input_gain:          f32::from_bits(self.input_gain.load(Ordering::Relaxed)),
         }
     }
 
@@ -281,6 +286,7 @@ impl App {
         self.theme.choice = ThemeChoice::Earth;
         self.theme.apply(ctx);
         self.auto_start = false;
+        self.input_gain.store(1.0f32.to_bits(), Ordering::Relaxed);
         self.stop_engine();
         self.last_error = None;
     }
@@ -591,6 +597,20 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
             ui.separator();
             ui.add_space(6.0);
 
+            // Input gain
+            ui.label(RichText::new("Input Gain").color(theme.text_muted).small());
+            let mut gain = f32::from_bits(app.input_gain.load(Ordering::Relaxed));
+            let prev_gain = gain;
+            ui.add(egui::Slider::new(&mut gain, 0.0f32..=4.0f32)
+                .text("×")
+                .fixed_decimals(2)
+                .clamping(egui::SliderClamping::Always));
+            if gain != prev_gain {
+                app.input_gain.store(gain.to_bits(), Ordering::Relaxed);
+                app.settings_dirty = true;
+            }
+            ui.add_space(4.0);
+
             // Input level meter
             let level = app.input_level.get();
             ui.label(RichText::new("Input Level").color(theme.text_muted).small());
@@ -655,9 +675,10 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
             app.spectrum_panel.show(ui, accent, active);
         });
 
-        ui.add_space(4.0);
+        // ── Effect chain header with optional Reset button ────────────────────
+        ui.add_space(6.0);
         ui.horizontal(|ui| {
-            section_header(ui, "EFFECT CHAIN", theme.accent);
+            ui.label(RichText::new("EFFECT CHAIN").strong().small().color(theme.accent));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if let Some(idx) = app.selected_profile {
                     let is_dirty = app.live_effects != app.profiles[idx].effects;
@@ -670,10 +691,25 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
                 }
             });
         });
+        {
+            let (rect, _) = ui.allocate_exact_size(
+                egui::vec2(ui.available_width(), 1.0), egui::Sense::hover()
+            );
+            ui.painter().line_segment(
+                [Pos2::new(rect.left(), rect.center().y), Pos2::new(rect.right(), rect.center().y)],
+                Stroke::new(1.0, theme.accent.linear_multiply(0.30)),
+            );
+        }
+        ui.add_space(6.0);
 
         if app.live_effects.is_empty() {
             ui.centered_and_justified(|ui| {
-                ui.label(RichText::new("No effects in this profile").color(theme.text_muted));
+                let msg = if app.selected_profile == Some(0) {
+                    "Passthrough — audio is unmodified"
+                } else {
+                    "No effects in this profile"
+                };
+                ui.label(RichText::new(msg).color(theme.text_muted));
             });
             return;
         }
