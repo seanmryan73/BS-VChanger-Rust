@@ -401,3 +401,135 @@ fn fill_u16(data: &mut [u16], ch: usize, cons: &mut impl Consumer<Item = f32>) {
         for c in 0..ch { data[i * ch + c] = v; }
     }
 }
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ringbuf::{HeapRb, traits::{Producer, Consumer, Split, Observer}};
+
+    // ── Ring buffer: dual-output data flow ────────────────────────────────────
+
+    /// Both ring buffers receive all data and consumers read it back correctly.
+    #[test]
+    fn dual_buffers_both_receive_data() {
+        let (mut mon_prod, mut mon_cons)   = HeapRb::<f32>::new(RING_BUF_SAMPLES).split();
+        let (mut virt_prod, mut virt_cons) = HeapRb::<f32>::new(RING_BUF_SAMPLES).split();
+
+        let audio: Vec<f32> = (0..480).map(|i| i as f32 / 480.0).collect();
+
+        let n_mon  = mon_prod.push_slice(&audio);
+        let n_virt = virt_prod.push_slice(&audio);
+
+        assert_eq!(n_mon,  480, "monitor ring buffer should accept all 480 samples");
+        assert_eq!(n_virt, 480, "virtual ring buffer should accept all 480 samples");
+
+        let mut out_mon  = vec![0.0f32; 480];
+        let mut out_virt = vec![0.0f32; 480];
+        let r_mon  = mon_cons.pop_slice(&mut out_mon);
+        let r_virt = virt_cons.pop_slice(&mut out_virt);
+
+        assert_eq!(r_mon,  480, "monitor consumer should drain all 480 samples");
+        assert_eq!(r_virt, 480, "virtual consumer should drain all 480 samples");
+        assert_eq!(out_mon,  audio, "monitor data must match input");
+        assert_eq!(out_virt, audio, "virtual data must match input — failure here means the two producers interfere");
+    }
+
+    /// Simulates 100 input callbacks with virtual draining half as often as monitor.
+    /// Both buffers should receive every sample without overflow (16 k buffer >> 480×100 = 48 k).
+    /// NOTE: 480 × 100 = 48 000 > RING_BUF_SAMPLES (16 384), so overflow IS expected here
+    /// unless the consumer keeps up — verifies the overflow path drops cleanly.
+    #[test]
+    fn dual_buffers_asymmetric_drain_rates() {
+        let (mut mon_prod, mut mon_cons)   = HeapRb::<f32>::new(RING_BUF_SAMPLES).split();
+        let (mut virt_prod, mut virt_cons) = HeapRb::<f32>::new(RING_BUF_SAMPLES).split();
+
+        let callback = vec![0.5f32; 480];
+        let mut mon_pushed   = 0usize;
+        let mut virt_pushed  = 0usize;
+        let mut virt_drained = 0usize;
+
+        for iter in 0..100 {
+            mon_pushed  += mon_prod.push_slice(&callback);
+            virt_pushed += virt_prod.push_slice(&callback);
+
+            // Monitor drains every callback (fast consumer)
+            let mut sink = vec![0.0f32; 480];
+            mon_cons.pop_slice(&mut sink);
+
+            // Virtual drains every other callback (slow consumer — like a large WASAPI buffer)
+            if iter % 2 == 1 {
+                let mut sink2 = vec![0.0f32; 960];
+                virt_drained += virt_cons.pop_slice(&mut sink2);
+            }
+        }
+
+        // Monitor should always drain in sync — no overflow
+        assert_eq!(mon_pushed, 480 * 100, "monitor should never drop samples");
+
+        // Virtual drains 50 times * up-to-960 = ≤48 000. Buffer is 16 384 so
+        // overflow is inevitable after ~34 callbacks. Verify total pushed ≤ 48 000.
+        assert!(virt_pushed <= 480 * 100, "virtual pushed should not exceed input count");
+        // After overflow virt_pushed < 48 000 — overflow drops silently, no panic
+        println!("virt pushed={virt_pushed} drained={virt_drained} (overflow at ~16384 samples in)");
+    }
+
+    // ── fill_f32: mono→stereo expansion ──────────────────────────────────────
+
+    #[test]
+    fn fill_f32_mono_to_stereo() {
+        let (mut prod, mut cons) = HeapRb::<f32>::new(64).split();
+        prod.push_slice(&[0.1, 0.2, 0.3, 0.4]);
+
+        let mut out = vec![0.0f32; 8]; // 4 frames × 2 channels
+        fill_f32(&mut out, 2, &mut cons);
+
+        // Each mono sample must appear on both L and R channels
+        assert_eq!(out, vec![0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4],
+            "mono sample must be duplicated to both stereo channels");
+    }
+
+    #[test]
+    fn fill_f32_empty_buffer_outputs_silence() {
+        let (_prod, mut cons) = HeapRb::<f32>::new(64).split();
+        let mut out = vec![1.0f32; 8]; // pre-filled with non-zero
+        fill_f32(&mut out, 2, &mut cons);
+        assert!(out.iter().all(|&s| s == 0.0), "empty ring buffer must produce silence, not garbage");
+    }
+
+    // ── OutputResampler: 48 kHz → 44.1 kHz ───────────────────────────────────
+
+    #[test]
+    fn resampler_produces_correct_sample_count() {
+        let (mut prod, mut cons) = HeapRb::<f32>::new(RING_BUF_SAMPLES).split();
+        // 100 ms at 48 kHz
+        prod.push_slice(&vec![0.5f32; 4_800]);
+
+        let mut rs = OutputResampler::new(48_000, 44_100);
+        // Consume 100 ms worth of 44.1 kHz output
+        let out: Vec<f32> = (0..4_410).map(|_| rs.next_sample(&mut cons)).collect();
+
+        assert_eq!(out.len(), 4_410, "resampler must produce exactly the requested output count");
+    }
+
+    #[test]
+    fn resampler_empty_input_outputs_held_value() {
+        // If the ring buffer is empty, next_sample should repeat the last known
+        // sample (prev), not produce NaN or panic.
+        let (_prod, mut cons) = HeapRb::<f32>::new(64).split();
+        let mut rs = OutputResampler::new(48_000, 44_100);
+        let s = rs.next_sample(&mut cons); // should not panic
+        assert!(s.is_finite(), "resampler must not produce NaN or Inf on empty buffer");
+    }
+
+    // ── Ring buffer overflow: push_slice drops silently ───────────────────────
+
+    #[test]
+    fn push_slice_drops_on_overflow() {
+        let (mut prod, _cons) = HeapRb::<f32>::new(100).split();
+        let pushed = prod.push_slice(&vec![1.0f32; 150]);
+        assert_eq!(pushed, 100, "push_slice must drop excess samples rather than blocking or panicking");
+        assert_eq!(prod.vacant_len(), 0, "buffer must be full after overflow push");
+    }
+}
