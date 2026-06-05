@@ -7,6 +7,12 @@ pub fn all() -> Vec<VoiceProfile> {
         VoiceProfile::built_in("Passthrough", vec![]),
 
         // ── Clean voice (primary use-case) ────────────────────────────────────
+        VoiceProfile::built_in("BagPipe Clean", vec![
+            fx(CleanMic,         true,  &[]),
+            fx(NoiseSuppression, true,  &[("strength",1.0),("threshold",0.5)]),
+            fx(Compressor,       true,  &[("threshold",0.4),("ratio",3.0),("attack",0.005),("release",0.1)]),
+            fx(Gain,             true,  &[("gain",1.0)]),
+        ]),
         VoiceProfile::built_in("Clean Voice", vec![
             fx(CleanMic,         true,  &[]),
             fx(NoiseSuppression, true,  &[]),

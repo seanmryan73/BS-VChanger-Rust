@@ -22,10 +22,10 @@ use crate::ui::{about_dialog, spectrum_panel::SpectrumPanel};
 
 // ── Grouped profile categories (built-in only) ────────────────────────────────
 const PROFILE_GROUPS: &[(&str, usize, usize)] = &[
-    ("CLEAN VOICE",       1,  9),
-    ("PITCH & CHARACTER", 9,  17),
-    ("SPACE & ROOM",      17, 20),
-    ("CREATIVE",          20, 25),
+    ("CLEAN VOICE",       1,  10),
+    ("PITCH & CHARACTER", 10, 18),
+    ("SPACE & ROOM",      18, 21),
+    ("CREATIVE",          21, 26),
 ];
 
 pub struct App {

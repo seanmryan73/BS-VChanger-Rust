@@ -32,7 +32,7 @@ impl Default for AppSettings {
             virtual_device_name: None,
             monitor_enabled:     true,
             virtual_enabled:     false,
-            last_profile_name:   Some("Clean Voice".into()),
+            last_profile_name:   Some("BagPipe Clean".into()),
             theme:               ThemeChoice::BagpipesGreen,
             category_expanded:   [true; 4],
             auto_start:          false,
