@@ -3,9 +3,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub enum ThemeChoice {
+    #[default]
+    BagpipesGreen,
+    BagpipesPink,
+    BagpipesPurple,
     Mercury,
     Venus,
-    #[default]
     Earth,
     Mars,
     Jupiter,
@@ -27,6 +30,9 @@ pub enum ThemeChoice {
 impl ThemeChoice {
     pub fn label(self) -> &'static str {
         match self {
+            ThemeChoice::BagpipesGreen  => "BagPipes Green",
+            ThemeChoice::BagpipesPink   => "BagPipes Pink",
+            ThemeChoice::BagpipesPurple => "BagPipes Purple",
             ThemeChoice::Mercury   => "Mercury",
             ThemeChoice::Venus     => "Venus",
             ThemeChoice::Earth     => "Earth",
@@ -49,6 +55,9 @@ impl ThemeChoice {
     }
 
     pub const ALL: &'static [ThemeChoice] = &[
+        ThemeChoice::BagpipesGreen,
+        ThemeChoice::BagpipesPink,
+        ThemeChoice::BagpipesPurple,
         ThemeChoice::Mercury,
         ThemeChoice::Venus,
         ThemeChoice::Earth,
@@ -84,6 +93,54 @@ pub struct AppTheme {
 }
 
 impl AppTheme {
+    /// BagPipes Green — true black with neon green lead, neon yellow widget borders, neon pink secondary.
+    pub fn bagpipes_green() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x08, 0x08, 0x08),
+            panel:         Color32::from_rgb(0x13, 0x13, 0x13),
+            accent:        Color32::from_rgb(0x00, 0xff, 0x66),
+            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xcc),
+            text:          Color32::from_rgb(0xf0, 0xf0, 0xf0),
+            text_muted:    Color32::from_rgb(0x3a, 0x6a, 0x4a),
+            slider_track:  Color32::from_rgb(0x1c, 0x1c, 0x1c),
+            selection_bg:  Color32::from_rgb(0x00, 0x33, 0x20),
+            border:        Color32::from_rgb(0x22, 0x22, 0x22),
+            widget_border: Color32::from_rgb(0xcc, 0xff, 0x00),
+        }
+    }
+
+    /// BagPipes Pink — near-black with purple tint, neon pink lead, neon purple widget borders.
+    pub fn bagpipes_pink() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x0a, 0x00, 0x08),
+            panel:         Color32::from_rgb(0x14, 0x00, 0x10),
+            accent:        Color32::from_rgb(0xff, 0x00, 0xcc),
+            accent_alt:    Color32::from_rgb(0x00, 0xff, 0x66),
+            text:          Color32::from_rgb(0xf8, 0xf0, 0xf8),
+            text_muted:    Color32::from_rgb(0x77, 0x44, 0x55),
+            slider_track:  Color32::from_rgb(0x1e, 0x00, 0x18),
+            selection_bg:  Color32::from_rgb(0x44, 0x00, 0x22),
+            border:        Color32::from_rgb(0x22, 0x00, 0x18),
+            widget_border: Color32::from_rgb(0xbf, 0x00, 0xff),
+        }
+    }
+
+    /// BagPipes Purple — deep black with violet tint, neon purple lead, neon yellow widget borders.
+    pub fn bagpipes_purple() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x06, 0x00, 0x08),
+            panel:         Color32::from_rgb(0x0e, 0x00, 0x18),
+            accent:        Color32::from_rgb(0xbf, 0x00, 0xff),
+            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xcc),
+            text:          Color32::from_rgb(0xee, 0xe0, 0xff),
+            text_muted:    Color32::from_rgb(0x55, 0x33, 0x66),
+            slider_track:  Color32::from_rgb(0x16, 0x00, 0x20),
+            selection_bg:  Color32::from_rgb(0x2a, 0x00, 0x44),
+            border:        Color32::from_rgb(0x1a, 0x00, 0x28),
+            widget_border: Color32::from_rgb(0xff, 0xee, 0x00),
+        }
+    }
+
     /// Mercury — scorched on one side, frozen on the other. Jet black with solar fire.
     pub fn mercury() -> Self {
         Self {
@@ -379,11 +436,14 @@ pub struct ThemeManager {
 
 impl ThemeManager {
     pub fn new() -> Self {
-        Self { choice: ThemeChoice::Earth }
+        Self { choice: ThemeChoice::BagpipesGreen }
     }
 
     pub fn current(&self) -> AppTheme {
         match self.choice {
+            ThemeChoice::BagpipesGreen  => AppTheme::bagpipes_green(),
+            ThemeChoice::BagpipesPink   => AppTheme::bagpipes_pink(),
+            ThemeChoice::BagpipesPurple => AppTheme::bagpipes_purple(),
             ThemeChoice::Mercury   => AppTheme::mercury(),
             ThemeChoice::Venus     => AppTheme::venus(),
             ThemeChoice::Earth     => AppTheme::earth(),

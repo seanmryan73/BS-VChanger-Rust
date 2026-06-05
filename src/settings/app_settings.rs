@@ -33,7 +33,7 @@ impl Default for AppSettings {
             monitor_enabled:     true,
             virtual_enabled:     false,
             last_profile_name:   Some("Clean Voice".into()),
-            theme:               ThemeChoice::Earth,
+            theme:               ThemeChoice::BagpipesGreen,
             category_expanded:   [true; 4],
             auto_start:          false,
             input_gain:          1.0,
