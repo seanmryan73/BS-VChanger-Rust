@@ -1,6 +1,5 @@
 # Rust build output
 target/
-debug/
 
 # Rust backup files (rustfmt)
 **/*.rs.bk
@@ -11,16 +10,25 @@ debug/
 # Windows executables dropped in repo root (e.g. manual release copies)
 *.exe
 
+# Logs and crash dumps
+*.log
+crash-*.txt
+
 # IDE
 .idea/
 .vscode/
 *.suo
 *.user
+*.code-workspace
+
+# Claude Code workspace files
+.claude/
 
 # OS
 Thumbs.db
 Desktop.ini
 .DS_Store
+ehthumbs.db
 
 # NOTE: Cargo.lock is intentionally committed — this is a binary crate.
-# App data (settings.json, profiles.json) is written to %APPDATA%\BS-VChanger-Rust\, not here.
+# App data (settings.json, user_profiles.json) lives in %APPDATA%\BS-VChanger-Rust\, not here.
