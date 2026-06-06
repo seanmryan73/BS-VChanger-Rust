@@ -12,8 +12,8 @@ fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("BS-VChanger")
-            .with_inner_size([1100.0, 700.0])
-            .with_min_inner_size([800.0, 500.0])
+            .with_inner_size([1280.0, 820.0])
+            .with_min_inner_size([900.0, 560.0])
             .with_icon(bs_icon()),
         ..Default::default()
     };

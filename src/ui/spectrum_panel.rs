@@ -85,13 +85,29 @@ impl SpectrumPanel {
         let (resp, painter) = ui.allocate_painter(desired, Sense::hover());
         let rect = resp.rect;
 
-        painter.rect_filled(rect, 0.0, Color32::from_rgb(0x0e, 0x0e, 0x14));
+        painter.rect_filled(rect, 0.0, Color32::from_rgb(0x05, 0x05, 0x0c));
 
-        if !active {
-            let y = rect.bottom() - 1.0;
+        // Split: top 68% = bar zone, bottom 32% = reflection zone
+        let split_y      = rect.top() + rect.height() * 0.68;
+        let bar_h_range  = split_y - rect.top();
+        let refl_h_range = rect.bottom() - split_y;
+
+        // Faint horizontal grid lines in bar zone
+        for frac in [0.25f32, 0.50, 0.75] {
+            let y = split_y - frac * bar_h_range;
             painter.line_segment(
                 [Pos2::new(rect.left(), y), Pos2::new(rect.right(), y)],
-                egui::Stroke::new(1.0, Color32::from_rgb(0x33, 0x33, 0x44)),
+                egui::Stroke::new(0.5, Color32::from_rgba_unmultiplied(130, 130, 190, 12)),
+            );
+        }
+
+        // Frequency labels always visible (even when stopped)
+        draw_freq_labels(&painter, rect, split_y);
+
+        if !active {
+            painter.line_segment(
+                [Pos2::new(rect.left(), split_y), Pos2::new(rect.right(), split_y)],
+                egui::Stroke::new(1.0, Color32::from_rgb(0x1a, 0x1a, 0x28)),
             );
             return;
         }
@@ -99,54 +115,75 @@ impl SpectrumPanel {
         let bar_width = rect.width() / N_BINS as f32;
         let inner_w   = (bar_width - 1.5).max(1.0);
 
-        // Draw bars (glow + body + cap)
+        // Draw bars + reflections
         for (i, &height_norm) in self.bars.iter().enumerate() {
             if height_norm < 0.001 { continue; }
 
-            let bar_h   = height_norm * rect.height();
+            let bar_h   = height_norm * bar_h_range;
             let x       = rect.left() + i as f32 * bar_width;
-            let bar_top = rect.bottom() - bar_h;
+            let bar_top = split_y - bar_h;
             let color   = vu_color(height_norm, accent);
 
-            // Glow layers — outermost first so inner ones paint over
+            // Glow layers
             for g in (0..GLOW_LAYERS).rev() {
-                let spread = (g + 1) as f32 * 2.5;
-                let alpha  = ((color.a() as f32) * 0.22 / (g + 1) as f32) as u8;
+                let spread = (g + 1) as f32 * 2.0;
+                let alpha  = ((color.a() as f32) * 0.18 / (g + 1) as f32) as u8;
                 let gc     = Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), alpha);
-                let glow   = Rect::from_min_size(
-                    Pos2::new(x + 0.5 - spread, bar_top - spread * 0.5),
-                    Vec2::new(inner_w + spread * 2.0, bar_h + spread * 0.5),
+                painter.rect_filled(
+                    Rect::from_min_size(
+                        Pos2::new(x + 0.5 - spread, bar_top - spread * 0.5),
+                        Vec2::new(inner_w + spread * 2.0, bar_h + spread * 0.5),
+                    ),
+                    3.0, gc,
                 );
-                painter.rect_filled(glow, 3.0, gc);
             }
 
             // Main bar body
-            let bar_rect = Rect::from_min_size(
-                Pos2::new(x + 0.5, bar_top),
-                Vec2::new(inner_w, bar_h),
+            painter.rect_filled(
+                Rect::from_min_size(Pos2::new(x + 0.5, bar_top), Vec2::new(inner_w, bar_h)),
+                2.0, color,
             );
-            painter.rect_filled(bar_rect, 2.0, color);
 
-            // Bright cap at the top of each bar
-            let cap_h    = (bar_h * 0.04).clamp(2.0, 4.0);
-            let cap_rect = Rect::from_min_size(
-                Pos2::new(x + 0.5, bar_top),
-                Vec2::new(inner_w, cap_h),
+            // Bright cap
+            let cap_h = (bar_h * 0.04).clamp(2.0, 4.0);
+            painter.rect_filled(
+                Rect::from_min_size(Pos2::new(x + 0.5, bar_top), Vec2::new(inner_w, cap_h)),
+                1.0, lighten(color, 0.75),
             );
-            painter.rect_filled(cap_rect, 1.0, lighten(color, 0.75));
+
+            // Reflection — two-tier gradient: top half ~28%, bottom half ~10%
+            let rh = (height_norm * refl_h_range * 0.82).min(refl_h_range);
+            if rh > 0.5 {
+                let half = rh * 0.5;
+                painter.rect_filled(
+                    Rect::from_min_size(Pos2::new(x + 0.5, split_y), Vec2::new(inner_w, half)),
+                    1.0,
+                    Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), (color.a() as f32 * 0.28) as u8),
+                );
+                painter.rect_filled(
+                    Rect::from_min_size(Pos2::new(x + 0.5, split_y + half), Vec2::new(inner_w, rh - half)),
+                    1.0,
+                    Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), (color.a() as f32 * 0.09) as u8),
+                );
+            }
         }
 
-        // Peak-hold dots — drawn after bars so they sit on top
+        // Peak-hold dots
         for (i, &peak) in self.peaks.iter().enumerate() {
             if peak < 0.01 { continue; }
             let x      = rect.left() + i as f32 * bar_width;
-            let peak_y = rect.bottom() - peak * rect.height();
-            let dot    = Rect::from_min_size(
-                Pos2::new(x + 0.5, peak_y - 2.0),
-                Vec2::new(inner_w, 2.0),
+            let peak_y = split_y - peak * bar_h_range;
+            painter.rect_filled(
+                Rect::from_min_size(Pos2::new(x + 0.5, peak_y - 2.0), Vec2::new(inner_w, 2.0)),
+                0.0, lighten(vu_color(peak, accent), 0.9),
             );
-            painter.rect_filled(dot, 0.0, lighten(vu_color(peak, accent), 0.9));
         }
+
+        // Floor separator line (accent-tinted)
+        painter.line_segment(
+            [Pos2::new(rect.left(), split_y), Pos2::new(rect.right(), split_y)],
+            egui::Stroke::new(1.0, Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), 50)),
+        );
     }
 }
 
@@ -215,4 +252,36 @@ fn lerp_color(a: Color32, b: Color32, t: f32) -> Color32 {
 
 fn lerp_u8(a: u8, b: u8, t: f32) -> u8 {
     (a as f32 + (b as f32 - a as f32) * t).clamp(0.0, 255.0) as u8
+}
+
+fn draw_freq_labels(painter: &egui::Painter, rect: Rect, floor_y: f32) {
+    const LABELS: &[(f32, &str)] = &[
+        (60.0,     "60"),
+        (200.0,    "200"),
+        (500.0,    "500"),
+        (1_000.0,  "1k"),
+        (3_000.0,  "3k"),
+        (8_000.0,  "8k"),
+        (18_000.0, "18k"),
+    ];
+    let log_min = MIN_FREQ.log10();
+    let log_max = MAX_FREQ.log10();
+    let label_col = Color32::from_rgba_unmultiplied(155, 155, 195, 85);
+    let tick_col  = Color32::from_rgba_unmultiplied(130, 130, 175, 45);
+
+    for &(freq, label) in LABELS {
+        let t = (freq.log10() - log_min) / (log_max - log_min);
+        let x = rect.left() + t * rect.width();
+        painter.line_segment(
+            [Pos2::new(x, floor_y - 5.0), Pos2::new(x, floor_y)],
+            egui::Stroke::new(0.5, tick_col),
+        );
+        painter.text(
+            Pos2::new(x, floor_y - 6.0),
+            egui::Align2::CENTER_BOTTOM,
+            label,
+            egui::FontId::monospace(8.5),
+            label_col,
+        );
+    }
 }

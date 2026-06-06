@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::f32::consts::PI;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use parking_lot::Mutex;
@@ -312,6 +313,7 @@ impl eframe::App for App {
         if do_reset { self.reset_to_defaults(ctx); }
 
         show_header(self, ctx);
+        show_status_bar(self, ctx);
         show_profile_panel(self, ctx);
         show_device_panel(self, ctx);
         show_effect_panel(self, ctx);
@@ -343,26 +345,34 @@ fn section_header(ui: &mut Ui, label: &str, accent: Color32) {
     ui.add_space(6.0);
 }
 
-/// Horizontal level meter bar (for mic input).
+/// Segmented horizontal level meter — looks like a real VU meter.
 fn level_meter(ui: &mut Ui, level: f32, width: f32, accent: Color32, track: Color32) {
-    let height = 8.0;
+    let height  = 14.0;
+    let n_segs  = 22usize;
+    let gap     = 1.5f32;
+    let seg_w   = (width - gap * (n_segs - 1) as f32) / n_segs as f32;
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::hover());
-    ui.painter().rect_filled(rect, 3.0, track);
 
-    let fill_frac = level.min(1.0);
-    if fill_frac > 0.002 {
-        let fill_rect = egui::Rect::from_min_size(rect.min, egui::vec2(rect.width() * fill_frac, height));
-        let color = vu_color(fill_frac, accent);
-        ui.painter().rect_filled(fill_rect, 3.0, color);
+    let fill_count = (level.min(1.05) * n_segs as f32) as usize;
+
+    for i in 0..n_segs {
+        let x = rect.left() + i as f32 * (seg_w + gap);
+        let seg = egui::Rect::from_min_size(Pos2::new(x, rect.top()), egui::vec2(seg_w, height));
+        let color = if i < fill_count.min(n_segs) {
+            let norm = (i + 1) as f32 / n_segs as f32;
+            vu_color(norm, accent)
+        } else {
+            track
+        };
+        ui.painter().rect_filled(seg, 2.0, color);
     }
 
-    // Clip indicator: right-edge flash when level > 1.0
     if level > 1.0 {
-        let clip_rect = egui::Rect::from_min_size(
-            Pos2::new(rect.right() - 6.0, rect.top()),
-            egui::vec2(6.0, height),
+        let clip = egui::Rect::from_min_size(
+            Pos2::new(rect.right() - seg_w, rect.top()),
+            egui::vec2(seg_w, height),
         );
-        ui.painter().rect_filled(clip_rect, 1.0, Color32::from_rgb(0xff, 0x22, 0x22));
+        ui.painter().rect_filled(clip, 2.0, Color32::from_rgb(0xff, 0x20, 0x20));
     }
 }
 
@@ -391,29 +401,75 @@ fn lerp_u8(a: u8, b: u8, t: f32) -> u8 {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 fn show_header(app: &mut App, ctx: &Context) {
-    egui::TopBottomPanel::top("header").show(ctx, |ui| {
-        ui.horizontal(|ui| {
-            ui.heading("BS-VChanger");
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("About").clicked() { app.show_about = true; }
+    let theme = app.theme.current();
+    egui::TopBottomPanel::top("header")
+        .min_height(46.0)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_space(4.0);
+                ui.label(RichText::new("BS").size(22.0).strong().color(theme.accent));
+                ui.add_space(1.0);
+                ui.label(RichText::new("▸ VCHANGER").size(12.0).color(theme.text_muted));
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.add(
+                        egui::Button::new(RichText::new("?").color(theme.text_muted)).frame(false)
+                    ).on_hover_text("About").clicked() {
+                        app.show_about = true;
+                    }
+                    ui.add_space(8.0);
+                    let mut choice = app.theme.choice;
+                    egui::ComboBox::from_id_salt("theme_combo")
+                        .selected_text(choice.label())
+                        .width(120.0)
+                        .show_ui(ui, |ui| {
+                            for &t in ThemeChoice::ALL {
+                                ui.selectable_value(&mut choice, t, t.label());
+                            }
+                        });
+                    if choice != app.theme.choice {
+                        app.theme.choice = choice;
+                        app.theme.apply(ctx);
+                        app.settings_dirty = true;
+                    }
+                    ui.add_space(12.0);
+                });
+            });
+        });
+}
+
+fn show_status_bar(app: &App, ctx: &Context) {
+    let theme = app.theme.current();
+    egui::TopBottomPanel::bottom("status_bar")
+        .min_height(22.0)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
                 ui.add_space(8.0);
-                let mut choice = app.theme.choice;
-                egui::ComboBox::from_id_salt("theme_combo")
-                    .selected_text(choice.label())
-                    .width(90.0)
-                    .show_ui(ui, |ui| {
-                        for &t in ThemeChoice::ALL {
-                            ui.selectable_value(&mut choice, t, t.label());
-                        }
-                    });
-                if choice != app.theme.choice {
-                    app.theme.choice = choice;
-                    app.theme.apply(ctx);
-                    app.settings_dirty = true;
+                if let Some(idx) = app.selected_profile {
+                    if let Some(p) = app.profiles.get(idx) {
+                        ui.label(RichText::new(&p.name).small().color(theme.text_muted));
+                        ui.add(egui::Separator::default().vertical());
+                    }
+                }
+                let (dot_color, status_str) = match app.status.as_str() {
+                    "Running" => (
+                        Color32::from_rgb(0x40, 0xcc, 0x70),
+                        format!("● Running  {}kHz", app.audio_sample_rate / 1000),
+                    ),
+                    "Error" => (Color32::from_rgb(0xe0, 0x50, 0x50), "✖ Error".to_string()),
+                    _       => (Color32::from_rgb(0x44, 0x44, 0x60), "○ Stopped".to_string()),
+                };
+                ui.label(RichText::new(status_str).small().color(dot_color));
+                if let Some(ref err) = app.last_error {
+                    ui.add(egui::Separator::default().vertical());
+                    ui.label(
+                        RichText::new(format!("⚠ {err}"))
+                            .small()
+                            .color(Color32::from_rgb(0xe0, 0x70, 0x50)),
+                    );
                 }
             });
         });
-    });
 }
 
 // ── Left panel: Profile list ──────────────────────────────────────────────────
@@ -422,8 +478,8 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
     let theme = app.theme.current();
 
     egui::SidePanel::left("profiles")
-        .min_width(170.0)
-        .max_width(220.0)
+        .min_width(190.0)
+        .max_width(260.0)
         .show(ctx, |ui| {
             section_header(ui, "PROFILES", theme.accent);
 
@@ -438,6 +494,12 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                             RichText::new("Passthrough")
                                 .color(if selected { Color32::WHITE } else { theme.text }),
                         );
+                        if selected {
+                            ui.painter().rect_filled(
+                                egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
+                                0.0, theme.accent,
+                            );
+                        }
                         if resp.clicked() && !selected { app.select_profile(0); }
                     }
                     ui.add_space(4.0);
@@ -461,9 +523,15 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                                 let name = app.profiles[i].name.clone();
                                 let resp = ui.selectable_label(
                                     selected,
-                                    RichText::new(format!("    {name}"))
+                                    RichText::new(format!("  {name}"))
                                         .color(if selected { Color32::WHITE } else { theme.text }),
                                 );
+                                if selected {
+                                    ui.painter().rect_filled(
+                                        egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
+                                        0.0, theme.accent,
+                                    );
+                                }
                                 if resp.clicked() && !selected { app.select_profile(i); }
                             }
                         }
@@ -487,9 +555,15 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                             ui.horizontal(|ui| {
                                 let resp = ui.selectable_label(
                                     selected,
-                                    RichText::new(format!("    {name}"))
+                                    RichText::new(format!("  {name}"))
                                         .color(if selected { Color32::WHITE } else { theme.text }),
                                 );
+                                if selected {
+                                    ui.painter().rect_filled(
+                                        egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
+                                        0.0, theme.accent,
+                                    );
+                                }
                                 if resp.clicked() && !selected { app.select_profile(abs); }
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                     if ui.add(egui::Button::new(
@@ -538,15 +612,15 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
 // ── Right panel: Devices + Transport ─────────────────────────────────────────
 
 fn show_device_panel(app: &mut App, ctx: &Context) {
-    let theme = app.theme.current();
+    let theme   = app.theme.current();
+    let running = app.engine.is_some();
 
     egui::SidePanel::right("devices")
-        .min_width(220.0)
-        .max_width(300.0)
+        .min_width(240.0)
+        .max_width(310.0)
         .show(ctx, |ui| {
             section_header(ui, "DEVICES", theme.accent);
 
-            // Snapshot device config before controls render
             let snap_input           = app.selected_input.clone();
             let snap_monitor_enabled = app.monitor_enabled;
             let snap_monitor         = app.selected_monitor.clone();
@@ -554,47 +628,52 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
             let snap_virtual         = app.selected_virtual.clone();
 
             // Input
-            ui.label("Input");
+            ui.label(RichText::new("INPUT").color(theme.text_muted).small().strong());
             egui::ComboBox::from_id_salt("input_dev")
                 .selected_text(&app.selected_input)
-                .width(190.0)
+                .width(210.0)
                 .show_ui(ui, |ui| {
                     for name in app.input_devices.clone() {
                         ui.selectable_value(&mut app.selected_input, name.clone(), &name);
                     }
                 });
 
-            ui.add_space(4.0);
+            ui.add_space(6.0);
 
             // Monitor
-            ui.checkbox(&mut app.monitor_enabled, "Monitor");
-            ui.add_enabled_ui(app.monitor_enabled, |ui| {
-                egui::ComboBox::from_id_salt("monitor_dev")
-                    .selected_text(&app.selected_monitor)
-                    .width(190.0)
-                    .show_ui(ui, |ui| {
-                        for name in app.output_devices.clone() {
-                            ui.selectable_value(&mut app.selected_monitor, name.clone(), &name);
-                        }
-                    });
+            ui.label(RichText::new("MONITOR").color(theme.text_muted).small().strong());
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut app.monitor_enabled, "");
+                ui.add_enabled_ui(app.monitor_enabled, |ui| {
+                    egui::ComboBox::from_id_salt("monitor_dev")
+                        .selected_text(&app.selected_monitor)
+                        .width(185.0)
+                        .show_ui(ui, |ui| {
+                            for name in app.output_devices.clone() {
+                                ui.selectable_value(&mut app.selected_monitor, name.clone(), &name);
+                            }
+                        });
+                });
             });
 
-            ui.add_space(4.0);
+            ui.add_space(6.0);
 
             // Virtual
-            ui.checkbox(&mut app.virtual_enabled, "Virtual");
-            ui.add_enabled_ui(app.virtual_enabled, |ui| {
-                egui::ComboBox::from_id_salt("virtual_dev")
-                    .selected_text(if app.selected_virtual.is_empty() { "— select —" } else { &app.selected_virtual })
-                    .width(190.0)
-                    .show_ui(ui, |ui| {
-                        for name in app.output_devices.clone() {
-                            ui.selectable_value(&mut app.selected_virtual, name.clone(), &name);
-                        }
-                    });
+            ui.label(RichText::new("VIRTUAL OUTPUT").color(theme.text_muted).small().strong());
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut app.virtual_enabled, "");
+                ui.add_enabled_ui(app.virtual_enabled, |ui| {
+                    egui::ComboBox::from_id_salt("virtual_dev")
+                        .selected_text(if app.selected_virtual.is_empty() { "— select —" } else { &app.selected_virtual })
+                        .width(185.0)
+                        .show_ui(ui, |ui| {
+                            for name in app.output_devices.clone() {
+                                ui.selectable_value(&mut app.selected_virtual, name.clone(), &name);
+                            }
+                        });
+                });
             });
 
-            // If any device config changed, persist and restart engine if running
             let device_changed = app.selected_input   != snap_input
                 || app.monitor_enabled != snap_monitor_enabled
                 || app.selected_monitor != snap_monitor
@@ -608,19 +687,19 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                 }
             }
 
-            ui.add_space(12.0);
+            ui.add_space(10.0);
             ui.separator();
-            ui.add_space(6.0);
+            ui.add_space(8.0);
 
             // Mic volume
             let mut gain = f32::from_bits(app.input_gain.load(Ordering::Relaxed));
             let prev_gain = gain;
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Mic Volume").color(theme.text_muted).small());
+                ui.label(RichText::new("MIC VOLUME").color(theme.text_muted).small().strong());
                 if gain != 1.0 && ui.add(
                     egui::Button::new(RichText::new("↺").small().color(theme.text_muted))
                         .frame(false)
-                ).on_hover_text("Reset to default (1.00×)").clicked() {
+                ).on_hover_text("Reset to 1.00×").clicked() {
                     gain = 1.0;
                 }
             });
@@ -632,52 +711,45 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
                 app.input_gain.store(gain.to_bits(), Ordering::Relaxed);
                 app.settings_dirty = true;
             }
-            ui.add_space(4.0);
 
-            // Input level meter
-            let level = app.input_level.get();
-            ui.label(RichText::new("Input Level").color(theme.text_muted).small());
-            level_meter(ui, level, 190.0, theme.accent, theme.slider_track);
             ui.add_space(8.0);
+            ui.label(RichText::new("INPUT LEVEL").color(theme.text_muted).small().strong());
+            level_meter(ui, app.input_level.get(), 210.0, theme.accent, theme.slider_track);
 
-            // Start / Stop
-            let running = app.engine.is_some();
+            ui.add_space(12.0);
+
+            // Start / Stop — big, prominent button
             let (btn_label, btn_color) = if running {
-                ("■  Stop",  Color32::from_rgb(0xc0, 0x38, 0x38))
+                ("■  STOP",  Color32::from_rgb(0xaa, 0x28, 0x28))
             } else {
-                ("▶  Start", Color32::from_rgb(0x2a, 0x9a, 0x52))
+                ("▶  START", Color32::from_rgb(0x1e, 0x80, 0x3e))
             };
-            if ui.add(
-                egui::Button::new(RichText::new(btn_label).strong().color(Color32::WHITE))
+            let btn_resp = ui.add(
+                egui::Button::new(RichText::new(btn_label).strong().size(15.0).color(Color32::WHITE))
                     .fill(btn_color)
-                    .min_size(egui::vec2(190.0, 36.0)),
-            ).clicked() {
+                    .min_size(egui::vec2(210.0, 44.0)),
+            );
+            if btn_resp.clicked() {
                 if running { app.stop_engine(); } else { app.start_engine(); }
             }
-
-            ui.add_space(6.0);
-
-            // Status line — shows state + sample rate when running
-            let (dot_color, dot, status_text) = match app.status.as_str() {
-                "Running" => (Color32::from_rgb(0x40, 0xcc, 0x70), "●", format!("Running  {} kHz", app.audio_sample_rate / 1000)),
-                "Error"   => (Color32::from_rgb(0xe0, 0x50, 0x50), "✖", "Error".into()),
-                _         => (Color32::from_rgb(0x66, 0x66, 0x80), "○", "Stopped".into()),
-            };
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(dot).color(dot_color).strong());
-                ui.label(RichText::new(status_text).color(dot_color));
-            });
-
-            if let Some(ref err) = app.last_error.clone() {
-                ui.add_space(4.0);
-                ui.colored_label(Color32::from_rgb(0xe0, 0x70, 0x50), format!("⚠ {err}"));
+            // Animated glow ring when running
+            if running {
+                let t     = ctx.input(|i| i.time) as f32;
+                let pulse = (t * PI * 1.5).sin() * 0.5 + 0.5;
+                let alpha = (45.0 + pulse * 110.0) as u8;
+                ui.painter().rect_stroke(
+                    btn_resp.rect.expand(3.0),
+                    6.0,
+                    egui::Stroke::new(2.0, Color32::from_rgba_unmultiplied(
+                        theme.accent.r(), theme.accent.g(), theme.accent.b(), alpha,
+                    )),
+                );
             }
 
-            ui.add_space(8.0);
+            ui.add_space(10.0);
             ui.separator();
             ui.add_space(4.0);
 
-            // Auto-start toggle
             let prev_auto = app.auto_start;
             ui.checkbox(&mut app.auto_start, "Start automatically on launch");
             if app.auto_start != prev_auto { app.settings_dirty = true; }
@@ -692,8 +764,8 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
     let active = app.engine.is_some();
 
     egui::CentralPanel::default().show(ctx, |ui| {
-        // Spectrum fills top ~40% of the center panel
-        let spec_height = (ui.available_height() * 0.40).clamp(140.0, 260.0);
+        // Spectrum — taller to show bars + reflection zone
+        let spec_height = (ui.available_height() * 0.46).clamp(180.0, 320.0);
         ui.allocate_ui(egui::vec2(ui.available_width(), spec_height), |ui| {
             app.spectrum_panel.show(ui, accent, active);
         });
@@ -741,29 +813,64 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
 
         egui::ScrollArea::vertical().show(ui, |ui| {
             for idx in 0..app.live_effects.len() {
-                let cfg     = &mut app.live_effects[idx];
-                let label   = effect_display_name(cfg.effect_type);
-                let summary = effect_summary(cfg.effect_type, &cfg.params);
+                let enabled     = app.live_effects[idx].enabled;
+                let effect_type = app.live_effects[idx].effect_type;
+                let label       = effect_display_name(effect_type);
+                let summary     = effect_summary(effect_type, &app.live_effects[idx].params);
 
-                let id = egui::Id::new(("fx", idx));
-                egui::collapsing_header::CollapsingState::load_with_default_open(ctx, id, false)
-                    .show_header(ui, |ui| {
-                        let prev = cfg.enabled;
-                        ui.checkbox(&mut cfg.enabled, RichText::new(label).strong());
-                        if cfg.enabled != prev { chain_dirty = true; }
-                        if !summary.is_empty() {
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                ui.label(RichText::new(&summary).color(theme.text_muted).small());
+                // Card: subtle accent tint when enabled, dark when disabled
+                let card_fill = if enabled {
+                    Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), 9)
+                } else {
+                    Color32::from_rgb(0x0f, 0x0f, 0x15)
+                };
+
+                egui::Frame::none()
+                    .fill(card_fill)
+                    .rounding(egui::Rounding::same(4.0))
+                    .inner_margin(egui::Margin::same(4.0))
+                    .show(ui, |ui| {
+                        let cfg = &mut app.live_effects[idx];
+                        let id  = egui::Id::new(("fx", idx));
+                        egui::collapsing_header::CollapsingState::load_with_default_open(ctx, id, false)
+                            .show_header(ui, |ui| {
+                                // LED indicator dot
+                                let (led_r, _) = ui.allocate_exact_size(
+                                    egui::vec2(12.0, 12.0), egui::Sense::hover()
+                                );
+                                if cfg.enabled {
+                                    ui.painter().circle_filled(
+                                        led_r.center(), 6.5,
+                                        Color32::from_rgba_unmultiplied(accent.r(), accent.g(), accent.b(), 38),
+                                    );
+                                }
+                                ui.painter().circle_filled(
+                                    led_r.center(), 4.0,
+                                    if cfg.enabled { accent } else { Color32::from_rgb(0x26, 0x26, 0x30) },
+                                );
+
+                                let prev      = cfg.enabled;
+                                let text_col  = if prev { theme.text } else { theme.text_muted };
+                                ui.checkbox(
+                                    &mut cfg.enabled,
+                                    RichText::new(label).strong().color(text_col),
+                                );
+                                if cfg.enabled != prev { chain_dirty = true; }
+
+                                if !summary.is_empty() {
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.label(RichText::new(&summary).color(theme.text_muted).small());
+                                    });
+                                }
+                            })
+                            .body(|ui| {
+                                if effect_params_ui(ui, cfg.effect_type, &mut cfg.params) {
+                                    chain_dirty = true;
+                                }
                             });
-                        }
-                    })
-                    .body(|ui| {
-                        if effect_params_ui(ui, cfg.effect_type, &mut cfg.params) {
-                            chain_dirty = true;
-                        }
                     });
 
-                ui.separator();
+                ui.add_space(2.0);
             }
         });
 
