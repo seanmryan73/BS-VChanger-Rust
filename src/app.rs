@@ -284,7 +284,7 @@ impl App {
         self.selected_profile = Some(0);
         if let Some(p) = self.profiles.first() { self.live_effects = p.effects.clone(); }
         self.apply_chain();
-        self.theme.choice = ThemeChoice::BagpipesGreen;
+        self.theme.choice = ThemeChoice::CoralStorm;
         self.theme.apply(ctx);
         self.auto_start = false;
         self.input_gain.store(1.0f32.to_bits(), Ordering::Relaxed);
@@ -619,7 +619,22 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
         .min_width(240.0)
         .max_width(310.0)
         .show(ctx, |ui| {
-            section_header(ui, "DEVICES", theme.accent);
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("DEVICES").strong().small().color(theme.accent));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.small_button(RichText::new("↺").color(theme.text_muted)).on_hover_text("Refresh device list").clicked() {
+                        app.input_devices  = devices::list_input_devices();
+                        app.output_devices = devices::list_output_devices();
+                    }
+                });
+            });
+            let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 1.0), egui::Sense::hover());
+            ui.painter().line_segment(
+                [Pos2::new(rect.left(), rect.center().y), Pos2::new(rect.right(), rect.center().y)],
+                Stroke::new(1.0, theme.accent.linear_multiply(0.30)),
+            );
+            ui.add_space(6.0);
 
             let snap_input           = app.selected_input.clone();
             let snap_monitor_enabled = app.monitor_enabled;

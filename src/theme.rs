@@ -4,78 +4,69 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub enum ThemeChoice {
     #[default]
-    BagpipesGreen,
-    BagpipesPink,
-    BagpipesPurple,
-    Mercury,
-    Venus,
-    Earth,
-    Mars,
-    Jupiter,
-    Saturn,
-    Uranus,
-    Neptune,
-    Pluto,
-    Zeus,
-    Hades,
-    Poseidon,
-    Aphrodite,
-    Ares,
-    Athena,
-    Apollo,
-    Artemis,
-    Dionysus,
+    NeonVoid,
+    CyberRift,
+    AcidRain,
+    SolarFlare,
+    BloodMoon,
+    CandyPop,
+    ToxicSlime,
+    DeepSpace,
+    Inferno,
+    GlitchMode,
+    ArcticNova,
+    Vaporwave,
+    Galactic,
+    CoralStorm,
+    Ultraviolet,
+    NeonDusk,
+    JackedIn,
+    MoltenGlow,
 }
 
 impl ThemeChoice {
     pub fn label(self) -> &'static str {
         match self {
-            ThemeChoice::BagpipesGreen  => "BagPipes Green",
-            ThemeChoice::BagpipesPink   => "BagPipes Pink",
-            ThemeChoice::BagpipesPurple => "BagPipes Purple",
-            ThemeChoice::Mercury   => "Mercury",
-            ThemeChoice::Venus     => "Venus",
-            ThemeChoice::Earth     => "Earth",
-            ThemeChoice::Mars      => "Mars",
-            ThemeChoice::Jupiter   => "Jupiter",
-            ThemeChoice::Saturn    => "Saturn",
-            ThemeChoice::Uranus    => "Uranus",
-            ThemeChoice::Neptune   => "Neptune",
-            ThemeChoice::Pluto     => "Pluto",
-            ThemeChoice::Zeus      => "Zeus",
-            ThemeChoice::Hades     => "Hades",
-            ThemeChoice::Poseidon  => "Poseidon",
-            ThemeChoice::Aphrodite => "Aphrodite",
-            ThemeChoice::Ares      => "Ares",
-            ThemeChoice::Athena    => "Athena",
-            ThemeChoice::Apollo    => "Apollo",
-            ThemeChoice::Artemis   => "Artemis",
-            ThemeChoice::Dionysus  => "Dionysus",
+            ThemeChoice::NeonVoid    => "Neon Void",
+            ThemeChoice::CyberRift   => "Cyber Rift",
+            ThemeChoice::AcidRain    => "Acid Rain",
+            ThemeChoice::SolarFlare  => "Solar Flare",
+            ThemeChoice::BloodMoon   => "Blood Moon",
+            ThemeChoice::CandyPop    => "Candy Pop",
+            ThemeChoice::ToxicSlime  => "Toxic Slime",
+            ThemeChoice::DeepSpace   => "Deep Space",
+            ThemeChoice::Inferno     => "Inferno",
+            ThemeChoice::GlitchMode  => "Glitch Mode",
+            ThemeChoice::ArcticNova  => "Arctic Nova",
+            ThemeChoice::Vaporwave   => "Vaporwave",
+            ThemeChoice::Galactic    => "Galactic",
+            ThemeChoice::CoralStorm  => "Coral Storm",
+            ThemeChoice::Ultraviolet => "Ultraviolet",
+            ThemeChoice::NeonDusk    => "Neon Dusk",
+            ThemeChoice::JackedIn    => "Jacked In",
+            ThemeChoice::MoltenGlow  => "Molten Glow",
         }
     }
 
     pub const ALL: &'static [ThemeChoice] = &[
-        ThemeChoice::BagpipesGreen,
-        ThemeChoice::BagpipesPink,
-        ThemeChoice::BagpipesPurple,
-        ThemeChoice::Mercury,
-        ThemeChoice::Venus,
-        ThemeChoice::Earth,
-        ThemeChoice::Mars,
-        ThemeChoice::Jupiter,
-        ThemeChoice::Saturn,
-        ThemeChoice::Uranus,
-        ThemeChoice::Neptune,
-        ThemeChoice::Pluto,
-        ThemeChoice::Zeus,
-        ThemeChoice::Hades,
-        ThemeChoice::Poseidon,
-        ThemeChoice::Aphrodite,
-        ThemeChoice::Ares,
-        ThemeChoice::Athena,
-        ThemeChoice::Apollo,
-        ThemeChoice::Artemis,
-        ThemeChoice::Dionysus,
+        ThemeChoice::NeonVoid,
+        ThemeChoice::CyberRift,
+        ThemeChoice::AcidRain,
+        ThemeChoice::SolarFlare,
+        ThemeChoice::BloodMoon,
+        ThemeChoice::CandyPop,
+        ThemeChoice::ToxicSlime,
+        ThemeChoice::DeepSpace,
+        ThemeChoice::Inferno,
+        ThemeChoice::GlitchMode,
+        ThemeChoice::ArcticNova,
+        ThemeChoice::Vaporwave,
+        ThemeChoice::Galactic,
+        ThemeChoice::CoralStorm,
+        ThemeChoice::Ultraviolet,
+        ThemeChoice::NeonDusk,
+        ThemeChoice::JackedIn,
+        ThemeChoice::MoltenGlow,
     ];
 }
 
@@ -93,339 +84,273 @@ pub struct AppTheme {
 }
 
 impl AppTheme {
-    /// BagPipes Green — true black with neon green lead, neon yellow widget borders, neon pink secondary.
-    pub fn bagpipes_green() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x08, 0x08, 0x08),
-            panel:         Color32::from_rgb(0x13, 0x13, 0x13),
-            accent:        Color32::from_rgb(0x00, 0xff, 0x66),
-            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xcc),
-            text:          Color32::from_rgb(0xf0, 0xf0, 0xf0),
-            text_muted:    Color32::from_rgb(0x3a, 0x6a, 0x4a),
-            slider_track:  Color32::from_rgb(0x1c, 0x1c, 0x1c),
-            selection_bg:  Color32::from_rgb(0x00, 0x33, 0x20),
-            border:        Color32::from_rgb(0x22, 0x22, 0x22),
-            widget_border: Color32::from_rgb(0xcc, 0xff, 0x00),
-        }
-    }
-
-    /// BagPipes Pink — near-black with purple tint, neon pink lead, neon purple widget borders.
-    pub fn bagpipes_pink() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x0a, 0x00, 0x08),
-            panel:         Color32::from_rgb(0x14, 0x00, 0x10),
-            accent:        Color32::from_rgb(0xff, 0x00, 0xcc),
-            accent_alt:    Color32::from_rgb(0x00, 0xff, 0x66),
-            text:          Color32::from_rgb(0xf8, 0xf0, 0xf8),
-            text_muted:    Color32::from_rgb(0x77, 0x44, 0x55),
-            slider_track:  Color32::from_rgb(0x1e, 0x00, 0x18),
-            selection_bg:  Color32::from_rgb(0x44, 0x00, 0x22),
-            border:        Color32::from_rgb(0x22, 0x00, 0x18),
-            widget_border: Color32::from_rgb(0xbf, 0x00, 0xff),
-        }
-    }
-
-    /// BagPipes Purple — deep black with violet tint, neon purple lead, neon yellow widget borders.
-    pub fn bagpipes_purple() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x06, 0x00, 0x08),
-            panel:         Color32::from_rgb(0x0e, 0x00, 0x18),
-            accent:        Color32::from_rgb(0xbf, 0x00, 0xff),
-            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xcc),
-            text:          Color32::from_rgb(0xee, 0xe0, 0xff),
-            text_muted:    Color32::from_rgb(0x55, 0x33, 0x66),
-            slider_track:  Color32::from_rgb(0x16, 0x00, 0x20),
-            selection_bg:  Color32::from_rgb(0x2a, 0x00, 0x44),
-            border:        Color32::from_rgb(0x1a, 0x00, 0x28),
-            widget_border: Color32::from_rgb(0xff, 0xee, 0x00),
-        }
-    }
-
-    /// Mercury — scorched on one side, frozen on the other. Jet black with solar fire.
-    pub fn mercury() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x0a, 0x0a, 0x0a),
-            panel:         Color32::from_rgb(0x16, 0x16, 0x16),
-            accent:        Color32::from_rgb(0xff, 0x6b, 0x2b),
-            accent_alt:    Color32::from_rgb(0xff, 0xcc, 0x00),
-            text:          Color32::from_rgb(0xf2, 0xf2, 0xf2),
-            text_muted:    Color32::from_rgb(0x77, 0x77, 0x77),
-            slider_track:  Color32::from_rgb(0x22, 0x22, 0x22),
-            selection_bg:  Color32::from_rgb(0x99, 0x33, 0x00),
-            border:        Color32::from_rgb(0x2a, 0x2a, 0x2a),
-            widget_border: Color32::from_rgb(0x88, 0x66, 0x55),
-        }
-    }
-
-    /// Venus — toxic, beautiful, suffocating. Sulfuric acid yellow over deep amber darkness.
-    pub fn venus() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x18, 0x0e, 0x00),
-            panel:         Color32::from_rgb(0x28, 0x1a, 0x00),
-            accent:        Color32::from_rgb(0xff, 0xd7, 0x00),
-            accent_alt:    Color32::from_rgb(0xff, 0x88, 0x00),
-            text:          Color32::from_rgb(0xff, 0xf0, 0xcc),
-            text_muted:    Color32::from_rgb(0xaa, 0x88, 0x44),
-            slider_track:  Color32::from_rgb(0x38, 0x26, 0x00),
-            selection_bg:  Color32::from_rgb(0x88, 0x58, 0x00),
-            border:        Color32::from_rgb(0x44, 0x32, 0x00),
-            widget_border: Color32::from_rgb(0xcc, 0x99, 0x00),
-        }
-    }
-
-    /// Earth — deep ocean floors, bioluminescence, life. Our pale blue dot.
-    pub fn earth() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x04, 0x0d, 0x18),
-            panel:         Color32::from_rgb(0x09, 0x18, 0x2c),
-            accent:        Color32::from_rgb(0x00, 0xcc, 0x66),
-            accent_alt:    Color32::from_rgb(0x22, 0x99, 0xff),
-            text:          Color32::from_rgb(0xe0, 0xf4, 0xf8),
-            text_muted:    Color32::from_rgb(0x3a, 0x80, 0x60),
-            slider_track:  Color32::from_rgb(0x0e, 0x22, 0x30),
-            selection_bg:  Color32::from_rgb(0x0a, 0x60, 0x38),
-            border:        Color32::from_rgb(0x10, 0x2a, 0x3c),
-            widget_border: Color32::from_rgb(0x1a, 0x88, 0x55),
-        }
-    }
-
-    /// Mars — the red planet. Dust storms, ancient craters, rust forever.
-    pub fn mars() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x18, 0x08, 0x00),
-            panel:         Color32::from_rgb(0x28, 0x12, 0x00),
-            accent:        Color32::from_rgb(0xff, 0x45, 0x00),
-            accent_alt:    Color32::from_rgb(0xcc, 0x88, 0x44),
-            text:          Color32::from_rgb(0xf8, 0xe0, 0xcc),
-            text_muted:    Color32::from_rgb(0x99, 0x66, 0x44),
-            slider_track:  Color32::from_rgb(0x38, 0x18, 0x00),
-            selection_bg:  Color32::from_rgb(0x8a, 0x22, 0x00),
-            border:        Color32::from_rgb(0x44, 0x20, 0x00),
-            widget_border: Color32::from_rgb(0xcc, 0x55, 0x22),
-        }
-    }
-
-    /// Jupiter — swirling bands, the Great Red Spot, a storm older than civilization.
-    pub fn jupiter() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x16, 0x0e, 0x04),
-            panel:         Color32::from_rgb(0x24, 0x18, 0x08),
-            accent:        Color32::from_rgb(0xff, 0x8c, 0x00),
-            accent_alt:    Color32::from_rgb(0xff, 0xe4, 0xb5),
-            text:          Color32::from_rgb(0xff, 0xee, 0xdd),
-            text_muted:    Color32::from_rgb(0x99, 0x77, 0x55),
-            slider_track:  Color32::from_rgb(0x30, 0x20, 0x0a),
-            selection_bg:  Color32::from_rgb(0x7a, 0x40, 0x00),
-            border:        Color32::from_rgb(0x3c, 0x28, 0x10),
-            widget_border: Color32::from_rgb(0xcc, 0x77, 0x22),
-        }
-    }
-
-    /// Saturn — lord of the rings, golden and ancient, impossibly serene.
-    pub fn saturn() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x0e, 0x0c, 0x00),
-            panel:         Color32::from_rgb(0x1c, 0x18, 0x00),
-            accent:        Color32::from_rgb(0xe8, 0xc0, 0x40),
-            accent_alt:    Color32::from_rgb(0xff, 0x99, 0x44),
-            text:          Color32::from_rgb(0xff, 0xf8, 0xe0),
-            text_muted:    Color32::from_rgb(0x8a, 0x7a, 0x40),
-            slider_track:  Color32::from_rgb(0x28, 0x22, 0x00),
-            selection_bg:  Color32::from_rgb(0x6a, 0x58, 0x00),
-            border:        Color32::from_rgb(0x3a, 0x30, 0x00),
-            widget_border: Color32::from_rgb(0xb0, 0x90, 0x20),
-        }
-    }
-
-    /// Uranus — the sideways ice giant, impossibly cold, impossibly calm.
-    pub fn uranus() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x04, 0x10, 0x14),
-            panel:         Color32::from_rgb(0x08, 0x1e, 0x24),
-            accent:        Color32::from_rgb(0x40, 0xe0, 0xd0),
-            accent_alt:    Color32::from_rgb(0x80, 0xff, 0xee),
-            text:          Color32::from_rgb(0xd0, 0xf4, 0xf8),
-            text_muted:    Color32::from_rgb(0x30, 0x88, 0x88),
-            slider_track:  Color32::from_rgb(0x0e, 0x28, 0x30),
-            selection_bg:  Color32::from_rgb(0x08, 0x58, 0x60),
-            border:        Color32::from_rgb(0x10, 0x32, 0x40),
-            widget_border: Color32::from_rgb(0x20, 0xb8, 0xb0),
-        }
-    }
-
-    /// Neptune — the storm giant. Winds faster than anything on Earth, forever.
-    pub fn neptune() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x02, 0x06, 0x14),
-            panel:         Color32::from_rgb(0x04, 0x10, 0x28),
-            accent:        Color32::from_rgb(0x44, 0x88, 0xff),
-            accent_alt:    Color32::from_rgb(0x00, 0xcc, 0xff),
-            text:          Color32::from_rgb(0xc0, 0xd8, 0xff),
-            text_muted:    Color32::from_rgb(0x33, 0x55, 0xaa),
-            slider_track:  Color32::from_rgb(0x08, 0x18, 0x38),
-            selection_bg:  Color32::from_rgb(0x18, 0x38, 0x99),
-            border:        Color32::from_rgb(0x0e, 0x22, 0x4a),
-            widget_border: Color32::from_rgb(0x33, 0x66, 0xdd),
-        }
-    }
-
-    /// Pluto — tiny, frozen, 5.9 billion km away. The heart-shaped Tombaugh Regio in dusty pink.
-    pub fn pluto() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x08, 0x08, 0x12),
-            panel:         Color32::from_rgb(0x12, 0x10, 0x1e),
-            accent:        Color32::from_rgb(0xdd, 0x88, 0xbb),
-            accent_alt:    Color32::from_rgb(0x88, 0x99, 0xcc),
-            text:          Color32::from_rgb(0xe0, 0xd0, 0xe8),
-            text_muted:    Color32::from_rgb(0x66, 0x55, 0x77),
-            slider_track:  Color32::from_rgb(0x1a, 0x18, 0x2a),
-            selection_bg:  Color32::from_rgb(0x66, 0x30, 0x66),
-            border:        Color32::from_rgb(0x22, 0x20, 0x32),
-            widget_border: Color32::from_rgb(0x99, 0x66, 0xaa),
-        }
-    }
-
-    /// Zeus — king of Olympus, lord of lightning. Storm black split by pure electric yellow.
-    pub fn zeus() -> Self {
-        Self {
-            background:    Color32::from_rgb(0x05, 0x05, 0x08),
-            panel:         Color32::from_rgb(0x0a, 0x0c, 0x14),
-            accent:        Color32::from_rgb(0xff, 0xff, 0x00),
-            accent_alt:    Color32::from_rgb(0xff, 0xff, 0xff),
-            text:          Color32::from_rgb(0xf0, 0xf0, 0xff),
-            text_muted:    Color32::from_rgb(0x60, 0x60, 0xa0),
-            slider_track:  Color32::from_rgb(0x14, 0x14, 0x20),
-            selection_bg:  Color32::from_rgb(0x44, 0x44, 0xcc),
-            border:        Color32::from_rgb(0x1a, 0x1a, 0x2e),
-            widget_border: Color32::from_rgb(0x88, 0x88, 0xff),
-        }
-    }
-
-    /// Hades — lord of the dead. Pure black void with toxic underworld green and spectral purple.
-    pub fn hades() -> Self {
+    pub fn neon_void() -> Self {
         Self {
             background:    Color32::from_rgb(0x00, 0x00, 0x00),
-            panel:         Color32::from_rgb(0x0a, 0x00, 0x10),
-            accent:        Color32::from_rgb(0x00, 0xff, 0x66),
-            accent_alt:    Color32::from_rgb(0xcc, 0x00, 0xff),
-            text:          Color32::from_rgb(0xd0, 0xd0, 0xe0),
-            text_muted:    Color32::from_rgb(0x40, 0x50, 0x40),
-            slider_track:  Color32::from_rgb(0x0e, 0x00, 0x12),
-            selection_bg:  Color32::from_rgb(0x00, 0x44, 0x22),
-            border:        Color32::from_rgb(0x14, 0x00, 0x1c),
-            widget_border: Color32::from_rgb(0x00, 0x88, 0x44),
+            panel:         Color32::from_rgb(0x08, 0x00, 0x10),
+            accent:        Color32::from_rgb(0x00, 0xff, 0xff),
+            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xaa),
+            text:          Color32::from_rgb(0xe0, 0xff, 0xff),
+            text_muted:    Color32::from_rgb(0x00, 0x88, 0x88),
+            slider_track:  Color32::from_rgb(0x0a, 0x00, 0x1a),
+            selection_bg:  Color32::from_rgb(0x00, 0x44, 0x44),
+            border:        Color32::from_rgb(0x00, 0x22, 0x22),
+            widget_border: Color32::from_rgb(0x00, 0xcc, 0xcc),
         }
     }
 
-    /// Poseidon — god of the sea. Abyssal deep with electric seafoam and blazing ocean blue.
-    pub fn poseidon() -> Self {
+    pub fn cyber_rift() -> Self {
         Self {
-            background:    Color32::from_rgb(0x00, 0x0c, 0x12),
-            panel:         Color32::from_rgb(0x00, 0x18, 0x24),
-            accent:        Color32::from_rgb(0x00, 0xff, 0xcc),
-            accent_alt:    Color32::from_rgb(0x00, 0x99, 0xff),
-            text:          Color32::from_rgb(0xcc, 0xf8, 0xff),
-            text_muted:    Color32::from_rgb(0x22, 0x70, 0x88),
-            slider_track:  Color32::from_rgb(0x00, 0x24, 0x2e),
-            selection_bg:  Color32::from_rgb(0x00, 0x66, 0x55),
-            border:        Color32::from_rgb(0x00, 0x38, 0x48),
-            widget_border: Color32::from_rgb(0x00, 0xcc, 0xaa),
+            background:    Color32::from_rgb(0x08, 0x00, 0x14),
+            panel:         Color32::from_rgb(0x12, 0x00, 0x28),
+            accent:        Color32::from_rgb(0xff, 0x00, 0xff),
+            accent_alt:    Color32::from_rgb(0x00, 0xcc, 0xff),
+            text:          Color32::from_rgb(0xf4, 0xd8, 0xff),
+            text_muted:    Color32::from_rgb(0x88, 0x00, 0xcc),
+            slider_track:  Color32::from_rgb(0x1a, 0x00, 0x34),
+            selection_bg:  Color32::from_rgb(0x44, 0x00, 0x88),
+            border:        Color32::from_rgb(0x22, 0x00, 0x44),
+            widget_border: Color32::from_rgb(0xcc, 0x00, 0xff),
         }
     }
 
-    /// Aphrodite — goddess of love. Hot shocking magenta over dark rose-black. Unapologetically loud.
-    pub fn aphrodite() -> Self {
+    pub fn acid_rain() -> Self {
         Self {
-            background:    Color32::from_rgb(0x12, 0x00, 0x08),
-            panel:         Color32::from_rgb(0x20, 0x00, 0x10),
-            accent:        Color32::from_rgb(0xff, 0x00, 0xaa),
-            accent_alt:    Color32::from_rgb(0xff, 0x66, 0x88),
-            text:          Color32::from_rgb(0xff, 0xd0, 0xe8),
-            text_muted:    Color32::from_rgb(0x88, 0x55, 0x68),
-            slider_track:  Color32::from_rgb(0x2a, 0x00, 0x1a),
-            selection_bg:  Color32::from_rgb(0x88, 0x00, 0x44),
-            border:        Color32::from_rgb(0x38, 0x00, 0x22),
-            widget_border: Color32::from_rgb(0xdd, 0x00, 0x88),
+            background:    Color32::from_rgb(0x00, 0x0c, 0x06),
+            panel:         Color32::from_rgb(0x00, 0x1a, 0x0c),
+            accent:        Color32::from_rgb(0x00, 0xff, 0x44),
+            accent_alt:    Color32::from_rgb(0x00, 0xff, 0xcc),
+            text:          Color32::from_rgb(0xcc, 0xff, 0xe8),
+            text_muted:    Color32::from_rgb(0x00, 0x88, 0x44),
+            slider_track:  Color32::from_rgb(0x00, 0x24, 0x10),
+            selection_bg:  Color32::from_rgb(0x00, 0x55, 0x22),
+            border:        Color32::from_rgb(0x00, 0x30, 0x16),
+            widget_border: Color32::from_rgb(0x00, 0xcc, 0x44),
         }
     }
 
-    /// Ares — god of war. Pure blood red and cold chrome silver on battle-black.
-    pub fn ares() -> Self {
+    pub fn solar_flare() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x10, 0x04, 0x00),
+            panel:         Color32::from_rgb(0x20, 0x08, 0x00),
+            accent:        Color32::from_rgb(0xff, 0x66, 0x00),
+            accent_alt:    Color32::from_rgb(0xff, 0xee, 0x00),
+            text:          Color32::from_rgb(0xff, 0xf4, 0xcc),
+            text_muted:    Color32::from_rgb(0xaa, 0x44, 0x00),
+            slider_track:  Color32::from_rgb(0x2c, 0x0e, 0x00),
+            selection_bg:  Color32::from_rgb(0x88, 0x22, 0x00),
+            border:        Color32::from_rgb(0x38, 0x14, 0x00),
+            widget_border: Color32::from_rgb(0xff, 0x88, 0x00),
+        }
+    }
+
+    pub fn blood_moon() -> Self {
         Self {
             background:    Color32::from_rgb(0x10, 0x00, 0x00),
-            panel:         Color32::from_rgb(0x1a, 0x00, 0x00),
-            accent:        Color32::from_rgb(0xff, 0x00, 0x22),
-            accent_alt:    Color32::from_rgb(0xcc, 0xcc, 0xcc),
-            text:          Color32::from_rgb(0xf8, 0xe0, 0xe0),
-            text_muted:    Color32::from_rgb(0x88, 0x55, 0x55),
-            slider_track:  Color32::from_rgb(0x22, 0x00, 0x00),
-            selection_bg:  Color32::from_rgb(0x88, 0x00, 0x00),
+            panel:         Color32::from_rgb(0x1e, 0x00, 0x00),
+            accent:        Color32::from_rgb(0xff, 0x00, 0x33),
+            accent_alt:    Color32::from_rgb(0xff, 0x44, 0x99),
+            text:          Color32::from_rgb(0xff, 0xe0, 0xe0),
+            text_muted:    Color32::from_rgb(0xaa, 0x00, 0x22),
+            slider_track:  Color32::from_rgb(0x28, 0x00, 0x00),
+            selection_bg:  Color32::from_rgb(0x77, 0x00, 0x11),
             border:        Color32::from_rgb(0x30, 0x00, 0x00),
-            widget_border: Color32::from_rgb(0xcc, 0x00, 0x11),
+            widget_border: Color32::from_rgb(0xdd, 0x00, 0x22),
         }
     }
 
-    /// Athena — goddess of wisdom. Electric ultraviolet and pure gold on deep indigo.
-    pub fn athena() -> Self {
+    pub fn candy_pop() -> Self {
         Self {
-            background:    Color32::from_rgb(0x04, 0x00, 0x1a),
-            panel:         Color32::from_rgb(0x08, 0x00, 0x3a),
-            accent:        Color32::from_rgb(0xcc, 0x00, 0xff),
-            accent_alt:    Color32::from_rgb(0xff, 0xd7, 0x00),
-            text:          Color32::from_rgb(0xee, 0xdc, 0xff),
-            text_muted:    Color32::from_rgb(0x70, 0x40, 0xa0),
-            slider_track:  Color32::from_rgb(0x0e, 0x00, 0x40),
-            selection_bg:  Color32::from_rgb(0x55, 0x00, 0xaa),
-            border:        Color32::from_rgb(0x14, 0x00, 0x50),
-            widget_border: Color32::from_rgb(0x99, 0x00, 0xcc),
+            background:    Color32::from_rgb(0x10, 0x00, 0x08),
+            panel:         Color32::from_rgb(0x1e, 0x00, 0x12),
+            accent:        Color32::from_rgb(0xff, 0x00, 0x88),
+            accent_alt:    Color32::from_rgb(0x00, 0xff, 0xaa),
+            text:          Color32::from_rgb(0xff, 0xdd, 0xee),
+            text_muted:    Color32::from_rgb(0xaa, 0x00, 0x55),
+            slider_track:  Color32::from_rgb(0x28, 0x00, 0x18),
+            selection_bg:  Color32::from_rgb(0x77, 0x00, 0x33),
+            border:        Color32::from_rgb(0x30, 0x00, 0x1e),
+            widget_border: Color32::from_rgb(0xff, 0x00, 0x88),
         }
     }
 
-    /// Apollo — god of the sun and music. Pure radiant solar yellow and blazing orange on amber-black.
-    pub fn apollo() -> Self {
+    pub fn toxic_slime() -> Self {
         Self {
-            background:    Color32::from_rgb(0x0e, 0x06, 0x00),
-            panel:         Color32::from_rgb(0x1a, 0x0e, 0x00),
-            accent:        Color32::from_rgb(0xff, 0xee, 0x00),
+            background:    Color32::from_rgb(0x03, 0x0a, 0x00),
+            panel:         Color32::from_rgb(0x06, 0x16, 0x00),
+            accent:        Color32::from_rgb(0xaa, 0xff, 0x00),
+            accent_alt:    Color32::from_rgb(0x00, 0xff, 0x55),
+            text:          Color32::from_rgb(0xee, 0xff, 0xcc),
+            text_muted:    Color32::from_rgb(0x66, 0x99, 0x00),
+            slider_track:  Color32::from_rgb(0x08, 0x1e, 0x00),
+            selection_bg:  Color32::from_rgb(0x44, 0x66, 0x00),
+            border:        Color32::from_rgb(0x0e, 0x28, 0x00),
+            widget_border: Color32::from_rgb(0x88, 0xff, 0x00),
+        }
+    }
+
+    pub fn deep_space() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x02, 0x00, 0x12),
+            panel:         Color32::from_rgb(0x06, 0x00, 0x26),
+            accent:        Color32::from_rgb(0x77, 0x00, 0xff),
+            accent_alt:    Color32::from_rgb(0x00, 0xcc, 0xff),
+            text:          Color32::from_rgb(0xe0, 0xd8, 0xff),
+            text_muted:    Color32::from_rgb(0x55, 0x00, 0xbb),
+            slider_track:  Color32::from_rgb(0x0a, 0x00, 0x38),
+            selection_bg:  Color32::from_rgb(0x33, 0x00, 0x88),
+            border:        Color32::from_rgb(0x10, 0x00, 0x44),
+            widget_border: Color32::from_rgb(0x77, 0x00, 0xff),
+        }
+    }
+
+    pub fn inferno() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x10, 0x05, 0x00),
+            panel:         Color32::from_rgb(0x1e, 0x0a, 0x00),
+            accent:        Color32::from_rgb(0xff, 0x22, 0x00),
             accent_alt:    Color32::from_rgb(0xff, 0x88, 0x00),
-            text:          Color32::from_rgb(0xff, 0xf8, 0xcc),
-            text_muted:    Color32::from_rgb(0x99, 0x77, 0x22),
-            slider_track:  Color32::from_rgb(0x26, 0x14, 0x00),
-            selection_bg:  Color32::from_rgb(0x88, 0x66, 0x00),
-            border:        Color32::from_rgb(0x38, 0x20, 0x00),
+            text:          Color32::from_rgb(0xff, 0xf0, 0xdd),
+            text_muted:    Color32::from_rgb(0xaa, 0x33, 0x00),
+            slider_track:  Color32::from_rgb(0x2a, 0x0e, 0x00),
+            selection_bg:  Color32::from_rgb(0x88, 0x14, 0x00),
+            border:        Color32::from_rgb(0x38, 0x12, 0x00),
+            widget_border: Color32::from_rgb(0xff, 0x44, 0x00),
+        }
+    }
+
+    pub fn glitch_mode() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x00, 0x03, 0x00),
+            panel:         Color32::from_rgb(0x00, 0x08, 0x02),
+            accent:        Color32::from_rgb(0x00, 0xff, 0x66),
+            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xcc),
+            text:          Color32::from_rgb(0xcc, 0xff, 0xdd),
+            text_muted:    Color32::from_rgb(0x00, 0x77, 0x33),
+            slider_track:  Color32::from_rgb(0x00, 0x10, 0x00),
+            selection_bg:  Color32::from_rgb(0x00, 0x44, 0x22),
+            border:        Color32::from_rgb(0x00, 0x1c, 0x06),
+            widget_border: Color32::from_rgb(0x00, 0xcc, 0x55),
+        }
+    }
+
+    pub fn arctic_nova() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x00, 0x16, 0x28),
+            panel:         Color32::from_rgb(0x00, 0x22, 0x40),
+            accent:        Color32::from_rgb(0x00, 0xdd, 0xff),
+            accent_alt:    Color32::from_rgb(0xff, 0xff, 0xff),
+            text:          Color32::from_rgb(0xe8, 0xfa, 0xff),
+            text_muted:    Color32::from_rgb(0x22, 0x88, 0xaa),
+            slider_track:  Color32::from_rgb(0x00, 0x30, 0x50),
+            selection_bg:  Color32::from_rgb(0x00, 0x55, 0x77),
+            border:        Color32::from_rgb(0x00, 0x3c, 0x5a),
+            widget_border: Color32::from_rgb(0x00, 0xaa, 0xdd),
+        }
+    }
+
+    pub fn vaporwave() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x0c, 0x00, 0x18),
+            panel:         Color32::from_rgb(0x18, 0x00, 0x28),
+            accent:        Color32::from_rgb(0xff, 0x44, 0xcc),
+            accent_alt:    Color32::from_rgb(0x44, 0xee, 0xff),
+            text:          Color32::from_rgb(0xff, 0xd8, 0xff),
+            text_muted:    Color32::from_rgb(0x99, 0x22, 0xaa),
+            slider_track:  Color32::from_rgb(0x22, 0x00, 0x38),
+            selection_bg:  Color32::from_rgb(0x77, 0x00, 0x66),
+            border:        Color32::from_rgb(0x2c, 0x00, 0x48),
+            widget_border: Color32::from_rgb(0xee, 0x00, 0xcc),
+        }
+    }
+
+    pub fn galactic() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x06, 0x00, 0x18),
+            panel:         Color32::from_rgb(0x0c, 0x00, 0x2c),
+            accent:        Color32::from_rgb(0xff, 0xcc, 0x00),
+            accent_alt:    Color32::from_rgb(0xbb, 0x00, 0xff),
+            text:          Color32::from_rgb(0xf8, 0xee, 0xff),
+            text_muted:    Color32::from_rgb(0x88, 0x55, 0xaa),
+            slider_track:  Color32::from_rgb(0x10, 0x00, 0x3a),
+            selection_bg:  Color32::from_rgb(0x55, 0x33, 0x00),
+            border:        Color32::from_rgb(0x18, 0x00, 0x44),
             widget_border: Color32::from_rgb(0xdd, 0xaa, 0x00),
         }
     }
 
-    /// Artemis — goddess of the moon and hunt. Cool moonlight silver and ice blue on dark charcoal.
-    pub fn artemis() -> Self {
+    pub fn coral_storm() -> Self {
         Self {
-            background:    Color32::from_rgb(0x06, 0x08, 0x10),
-            panel:         Color32::from_rgb(0x0c, 0x10, 0x20),
-            accent:        Color32::from_rgb(0xe8, 0xe8, 0xff),
-            accent_alt:    Color32::from_rgb(0x44, 0xdd, 0xff),
-            text:          Color32::from_rgb(0xf0, 0xf0, 0xff),
-            text_muted:    Color32::from_rgb(0x60, 0x70, 0x80),
-            slider_track:  Color32::from_rgb(0x10, 0x18, 0x28),
-            selection_bg:  Color32::from_rgb(0x3a, 0x3a, 0x88),
-            border:        Color32::from_rgb(0x1a, 0x20, 0x30),
-            widget_border: Color32::from_rgb(0xaa, 0xaa, 0xdd),
+            background:    Color32::from_rgb(0x00, 0x12, 0x12),
+            panel:         Color32::from_rgb(0x00, 0x1e, 0x1e),
+            accent:        Color32::from_rgb(0x1a, 0x70, 0x90),
+            accent_alt:    Color32::from_rgb(0x00, 0xff, 0xdd),
+            text:          Color32::from_rgb(0xff, 0xf4, 0xee),
+            text_muted:    Color32::from_rgb(0x22, 0x99, 0x88),
+            slider_track:  Color32::from_rgb(0x00, 0x2c, 0x2c),
+            selection_bg:  Color32::from_rgb(0x0d, 0x38, 0x4a),
+            border:        Color32::from_rgb(0x00, 0x38, 0x38),
+            widget_border: Color32::from_rgb(0xff, 0x44, 0x22),
         }
     }
 
-    /// Dionysus — god of wine and ecstasy. Electric magenta and deep violet. Pure chaotic joy.
-    pub fn dionysus() -> Self {
+    pub fn ultraviolet() -> Self {
         Self {
-            background:    Color32::from_rgb(0x0c, 0x00, 0x10),
-            panel:         Color32::from_rgb(0x18, 0x00, 0x24),
-            accent:        Color32::from_rgb(0xff, 0x00, 0xcc),
-            accent_alt:    Color32::from_rgb(0x88, 0x00, 0xff),
-            text:          Color32::from_rgb(0xf0, 0xd0, 0xff),
-            text_muted:    Color32::from_rgb(0x70, 0x40, 0xaa),
-            slider_track:  Color32::from_rgb(0x20, 0x00, 0x30),
-            selection_bg:  Color32::from_rgb(0x66, 0x00, 0x99),
-            border:        Color32::from_rgb(0x2a, 0x00, 0x40),
-            widget_border: Color32::from_rgb(0xcc, 0x00, 0xaa),
+            background:    Color32::from_rgb(0x04, 0x00, 0x0c),
+            panel:         Color32::from_rgb(0x08, 0x00, 0x1a),
+            accent:        Color32::from_rgb(0xcc, 0x00, 0xff),
+            accent_alt:    Color32::from_rgb(0xaa, 0xff, 0x00),
+            text:          Color32::from_rgb(0xf0, 0xd8, 0xff),
+            text_muted:    Color32::from_rgb(0x88, 0x00, 0xcc),
+            slider_track:  Color32::from_rgb(0x0e, 0x00, 0x24),
+            selection_bg:  Color32::from_rgb(0x44, 0x00, 0xaa),
+            border:        Color32::from_rgb(0x14, 0x00, 0x30),
+            widget_border: Color32::from_rgb(0xaa, 0x00, 0xee),
+        }
+    }
+
+    pub fn neon_dusk() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x10, 0x00, 0x0c),
+            panel:         Color32::from_rgb(0x1c, 0x00, 0x18),
+            accent:        Color32::from_rgb(0xff, 0x55, 0x00),
+            accent_alt:    Color32::from_rgb(0xff, 0x00, 0x88),
+            text:          Color32::from_rgb(0xff, 0xec, 0xe0),
+            text_muted:    Color32::from_rgb(0xaa, 0x33, 0x44),
+            slider_track:  Color32::from_rgb(0x26, 0x00, 0x18),
+            selection_bg:  Color32::from_rgb(0x88, 0x22, 0x00),
+            border:        Color32::from_rgb(0x30, 0x00, 0x22),
+            widget_border: Color32::from_rgb(0xff, 0x44, 0x00),
+        }
+    }
+
+    pub fn jacked_in() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x00, 0x00, 0x00),
+            panel:         Color32::from_rgb(0x00, 0x08, 0x00),
+            accent:        Color32::from_rgb(0x00, 0xff, 0x00),
+            accent_alt:    Color32::from_rgb(0x55, 0xff, 0x22),
+            text:          Color32::from_rgb(0xdd, 0xff, 0xdd),
+            text_muted:    Color32::from_rgb(0x00, 0xaa, 0x22),
+            slider_track:  Color32::from_rgb(0x00, 0x0e, 0x00),
+            selection_bg:  Color32::from_rgb(0x00, 0x44, 0x11),
+            border:        Color32::from_rgb(0x00, 0x18, 0x00),
+            widget_border: Color32::from_rgb(0x00, 0xcc, 0x00),
+        }
+    }
+
+    pub fn molten_glow() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x0e, 0x08, 0x00),
+            panel:         Color32::from_rgb(0x1c, 0x12, 0x00),
+            accent:        Color32::from_rgb(0xff, 0xee, 0x00),
+            accent_alt:    Color32::from_rgb(0xff, 0x77, 0x00),
+            text:          Color32::from_rgb(0xff, 0xfa, 0xcc),
+            text_muted:    Color32::from_rgb(0x99, 0x77, 0x00),
+            slider_track:  Color32::from_rgb(0x26, 0x18, 0x00),
+            selection_bg:  Color32::from_rgb(0x88, 0x77, 0x00),
+            border:        Color32::from_rgb(0x34, 0x22, 0x00),
+            widget_border: Color32::from_rgb(0xdd, 0xcc, 0x00),
         }
     }
 }
@@ -436,32 +361,29 @@ pub struct ThemeManager {
 
 impl ThemeManager {
     pub fn new() -> Self {
-        Self { choice: ThemeChoice::BagpipesGreen }
+        Self { choice: ThemeChoice::CoralStorm }
     }
 
     pub fn current(&self) -> AppTheme {
         match self.choice {
-            ThemeChoice::BagpipesGreen  => AppTheme::bagpipes_green(),
-            ThemeChoice::BagpipesPink   => AppTheme::bagpipes_pink(),
-            ThemeChoice::BagpipesPurple => AppTheme::bagpipes_purple(),
-            ThemeChoice::Mercury   => AppTheme::mercury(),
-            ThemeChoice::Venus     => AppTheme::venus(),
-            ThemeChoice::Earth     => AppTheme::earth(),
-            ThemeChoice::Mars      => AppTheme::mars(),
-            ThemeChoice::Jupiter   => AppTheme::jupiter(),
-            ThemeChoice::Saturn    => AppTheme::saturn(),
-            ThemeChoice::Uranus    => AppTheme::uranus(),
-            ThemeChoice::Neptune   => AppTheme::neptune(),
-            ThemeChoice::Pluto     => AppTheme::pluto(),
-            ThemeChoice::Zeus      => AppTheme::zeus(),
-            ThemeChoice::Hades     => AppTheme::hades(),
-            ThemeChoice::Poseidon  => AppTheme::poseidon(),
-            ThemeChoice::Aphrodite => AppTheme::aphrodite(),
-            ThemeChoice::Ares      => AppTheme::ares(),
-            ThemeChoice::Athena    => AppTheme::athena(),
-            ThemeChoice::Apollo    => AppTheme::apollo(),
-            ThemeChoice::Artemis   => AppTheme::artemis(),
-            ThemeChoice::Dionysus  => AppTheme::dionysus(),
+            ThemeChoice::NeonVoid    => AppTheme::neon_void(),
+            ThemeChoice::CyberRift   => AppTheme::cyber_rift(),
+            ThemeChoice::AcidRain    => AppTheme::acid_rain(),
+            ThemeChoice::SolarFlare  => AppTheme::solar_flare(),
+            ThemeChoice::BloodMoon   => AppTheme::blood_moon(),
+            ThemeChoice::CandyPop    => AppTheme::candy_pop(),
+            ThemeChoice::ToxicSlime  => AppTheme::toxic_slime(),
+            ThemeChoice::DeepSpace   => AppTheme::deep_space(),
+            ThemeChoice::Inferno     => AppTheme::inferno(),
+            ThemeChoice::GlitchMode  => AppTheme::glitch_mode(),
+            ThemeChoice::ArcticNova  => AppTheme::arctic_nova(),
+            ThemeChoice::Vaporwave   => AppTheme::vaporwave(),
+            ThemeChoice::Galactic    => AppTheme::galactic(),
+            ThemeChoice::CoralStorm  => AppTheme::coral_storm(),
+            ThemeChoice::Ultraviolet => AppTheme::ultraviolet(),
+            ThemeChoice::NeonDusk    => AppTheme::neon_dusk(),
+            ThemeChoice::JackedIn    => AppTheme::jacked_in(),
+            ThemeChoice::MoltenGlow  => AppTheme::molten_glow(),
         }
     }
 
