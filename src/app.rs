@@ -414,7 +414,7 @@ fn show_header(app: &mut App, ctx: &Context) {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.add(
                         egui::Button::new(RichText::new("?").color(theme.text_muted)).frame(false)
-                    ).on_hover_text("About").clicked() {
+                    ).on_hover_text("Help/About").clicked() {
                         app.show_about = true;
                     }
                     ui.add_space(8.0);

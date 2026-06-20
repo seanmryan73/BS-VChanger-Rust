@@ -1,4 +1,4 @@
-# BS-VChanger
+# BS-VChanger v2026.06.20
 
 Real-time voice changer for Windows. Built with Rust + egui.
 
@@ -6,9 +6,9 @@ Real-time voice changer for Windows. Built with Rust + egui.
 
 ## Features
 
-- **26 built-in voice profiles** across 4 categories: Clean Voice, Pitch & Character, Space & Room, Creative
+- **27 built-in voice profiles** across 6 categories: Clean Voice, Pitch & Character, Telephone & Radio, Space & Room, Creative, plus Passthrough
 - **17 DSP effects**: noise suppression, pitch shift, compressor, de-esser, reverb, echo, chorus, flanger, distortion, lo-fi, ring mod, robot, and more
-- **21 colour themes**: BagPipes, planetary (Mercury → Pluto), mythological (Zeus → Dionysus)
+- **18 colour themes**: NeonVoid, CyberRift, AcidRain, SolarFlare, BloodMoon, CandyPop, ToxicSlime, DeepSpace, Inferno, GlitchMode, ArcticNova, Vaporwave, Galactic, CoralStorm, Ultraviolet, NeonDusk, JackedIn, MoltenGlow
 - **Real-time spectrum analyser** with frequency labels and reflection effect
 - **Dual output routing**: monitor (speakers/headphones) + virtual (VB-CABLE for Teams/Discord/OBS)
 - **Custom profiles**: save, update, and delete your own presets
@@ -121,10 +121,12 @@ cargo run --release
 
 | Category | Profiles |
 |---|---|
-| **Clean Voice** | BagPipe Clean, BagPipe Podcast, Clean Voice, Noise Reduction, Studio Voice, Conference Call, Podcast, Clarity Boost, Broadcast |
-| **Pitch & Character** | Gentle Compress, Deep Voice, High Voice, Chipmunk, Giant, Telephone, Radio, Walkie-Talkie |
-| **Space & Room** | Megaphone, Echo Chamber, Cathedral |
-| **Creative** | Underwater, Robot, Alien, Daemon, Vintage |
+| **Passthrough** | Passthrough |
+| **Clean Voice** | BagPipe Clean, BagPipe Podcast, Clean Voice, Noise Reduction, Studio Voice, Conference Call, Podcast, Clarity Boost, Broadcast, Gentle Compress |
+| **Pitch & Character** | Deep Voice, High Voice, Chipmunk, Giant |
+| **Telephone & Radio** | Telephone, Radio, Walkie-Talkie, Megaphone |
+| **Space & Room** | Echo Chamber, Cathedral, Underwater |
+| **Creative** | Robot, Alien, Daemon, Vintage, Tremolo Voice |
 
 ---
 

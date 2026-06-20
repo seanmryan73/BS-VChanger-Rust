@@ -1,6 +1,6 @@
 use eframe::egui::{self, Color32, Context, RichText, ScrollArea, Ui};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = "2026.06.20";
 
 pub fn show(ctx: &Context, open: &mut bool, on_reset: &mut bool) {
     if !*open {
