@@ -1,6 +1,6 @@
 [package]
 name = "bs-vchanger"
-version = "2026.06.20"
+version = "2026.6.20"
 edition = "2021"
 
 [dependencies]
