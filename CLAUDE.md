@@ -6,9 +6,9 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI, processes it
 
 ## Reference notes (read these for standards)
 
-- Rust desktop standards: `C:\_repo\Obsidian\Notes\Claude\Reference\Rust-Desktop-Standards.md`
-- Author / version / company: `C:\_repo\Obsidian\Notes\Claude\Reference\Author-Version-Standards.md`
-- Project details: `C:\_repo\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md`
+- Rust desktop standards: `C:\_repos\Obsidian\Notes\Claude\Reference\Rust-Desktop-Standards.md`
+- Author / version / company: `C:\_repos\Obsidian\Notes\Claude\Reference\Author-Version-Standards.md`
+- Project details: `C:\_repos\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md`
 
 ## Author / version standard
 
@@ -29,7 +29,7 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI, processes it
 - **`nnnoiseless` (RNNoise)** is the only C-backed crate — acceptable; no pure-Rust alternative exists at this quality level.
 - **Windows-only:** WASAPI + Direct3D/OpenGL via GPU driver.
 - **App data:** All persistent data goes to `%APPDATA%\BS-VChanger-Rust\` — never the EXE directory.
-- **18-theme system:** Existing multi-theme set (NeonVoid, CyberRift, AcidRain, CoralStorm, etc.); do not replace with the standard 4-theme `ThemeManager`.
+- **19-theme system:** Existing multi-theme set (NeonVoid, CyberRift, AcidRain, CoralStorm, Lucky, etc.); do not replace with the standard 5-theme `ThemeManager`.
 - **`#![deny(unsafe_code)]` is missing** — should be added; the app has zero unsafe blocks.
 
 ## Working rules

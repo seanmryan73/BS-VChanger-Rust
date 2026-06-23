@@ -22,6 +22,7 @@ pub enum ThemeChoice {
     NeonDusk,
     JackedIn,
     MoltenGlow,
+    Lucky,
 }
 
 impl ThemeChoice {
@@ -45,6 +46,7 @@ impl ThemeChoice {
             ThemeChoice::NeonDusk    => "Neon Dusk",
             ThemeChoice::JackedIn    => "Jacked In",
             ThemeChoice::MoltenGlow  => "Molten Glow",
+            ThemeChoice::Lucky       => "Lucky",
         }
     }
 
@@ -67,6 +69,7 @@ impl ThemeChoice {
         ThemeChoice::NeonDusk,
         ThemeChoice::JackedIn,
         ThemeChoice::MoltenGlow,
+        ThemeChoice::Lucky,
     ];
 }
 
@@ -353,6 +356,21 @@ impl AppTheme {
             widget_border: Color32::from_rgb(0xdd, 0xcc, 0x00),
         }
     }
+
+    pub fn lucky() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x14, 0x00, 0x2d),
+            panel:         Color32::from_rgb(0x2d, 0x08, 0x50),
+            accent:        Color32::from_rgb(0xff, 0x14, 0xd2),
+            accent_alt:    Color32::from_rgb(0xc3, 0xff, 0x28),
+            text:          Color32::from_rgb(0xc3, 0xff, 0x28),
+            text_muted:    Color32::from_rgb(0x00, 0xa0, 0x8c),
+            slider_track:  Color32::from_rgb(0x23, 0x04, 0x41),
+            selection_bg:  Color32::from_rgb(0xb4, 0x4b, 0x00),
+            border:        Color32::from_rgb(0x3c, 0x14, 0x5a),
+            widget_border: Color32::from_rgb(0x00, 0xa0, 0x8c),
+        }
+    }
 }
 
 pub struct ThemeManager {
@@ -384,6 +402,7 @@ impl ThemeManager {
             ThemeChoice::NeonDusk    => AppTheme::neon_dusk(),
             ThemeChoice::JackedIn    => AppTheme::jacked_in(),
             ThemeChoice::MoltenGlow  => AppTheme::molten_glow(),
+            ThemeChoice::Lucky       => AppTheme::lucky(),
         }
     }
 

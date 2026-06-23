@@ -35,7 +35,7 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
             .color(muted).small());
         ui.add_space(2.0);
         ui.label(
-            RichText::new("26 profiles  •  21 themes  •  17 effects  •  single EXE")
+            RichText::new("27 profiles  •  18 themes  •  17 effects  •  single EXE")
                 .color(dim).small(),
         );
     });
@@ -85,6 +85,9 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.add_space(6.0);
 
     let groups: &[(&str, &[(&str, &str)])] = &[
+        ("PASSTHROUGH", &[
+            ("Passthrough", "Raw input with no processing — useful for comparing before/after."),
+        ]),
         ("CLEAN VOICE", &[
             ("BagPipe Clean",   "Noise suppression + compression. The everyday go-to."),
             ("BagPipe Podcast", "Podcast chain: noise gate, de-esser, compressor, gain."),
@@ -95,28 +98,31 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
             ("Podcast",         "Warm, present sound with gentle de-essing."),
             ("Clarity Boost",   "Presence EQ lift — cuts mud, adds articulation."),
             ("Broadcast",       "High-ratio compression for consistent loudness."),
+            ("Gentle Compress", "Light compression only — natural dynamics."),
         ]),
         ("PITCH & CHARACTER", &[
-            ("Gentle Compress", "Light compression only — natural dynamics."),
-            ("Deep Voice",      "Pitch -4 semitones. Deeper, more authoritative."),
-            ("High Voice",      "Pitch +4 semitones. Lighter, brighter character."),
-            ("Chipmunk",        "Pitch +12 semitones. Cartoon-chipmunk effect."),
-            ("Giant",           "Pitch -8 semitones + reverb. Massive and imposing."),
-            ("Telephone",       "Narrow bandpass + lo-fi. Classic phone-call sound."),
-            ("Radio",           "AM radio character with mild soft distortion."),
-            ("Walkie-Talkie",   "Hard-clipped, filtered, low-bit — handheld radio."),
+            ("Deep Voice",  "Pitch -4 semitones. Deeper, more authoritative."),
+            ("High Voice",  "Pitch +4 semitones. Lighter, brighter character."),
+            ("Chipmunk",    "Pitch +12 semitones. Cartoon-chipmunk effect."),
+            ("Giant",       "Pitch -8 semitones + reverb. Massive and imposing."),
+        ]),
+        ("TELEPHONE & RADIO", &[
+            ("Telephone",    "Narrow bandpass + lo-fi. Classic phone-call sound."),
+            ("Radio",        "AM radio character with mild soft distortion."),
+            ("Walkie-Talkie","Hard-clipped, filtered, low-bit — handheld radio."),
+            ("Megaphone",    "Harsh bandpass + overdrive. Outdoor announcement feel."),
         ]),
         ("SPACE & ROOM", &[
-            ("Megaphone",    "Harsh bandpass + overdrive. Outdoor announcement feel."),
             ("Echo Chamber", "Short delay + reverb. Empty room ambience."),
             ("Cathedral",    "Long, lush reverb + chorus. Enormous space."),
+            ("Underwater",   "Low bandpass + chorus + reverb. Submerged and eerie."),
         ]),
         ("CREATIVE", &[
-            ("Underwater", "Low bandpass + chorus + reverb. Submerged and eerie."),
-            ("Robot",      "Comb-filter pitch modulation for a robotic buzz."),
-            ("Alien",      "Pitch shift + ring modulator. Not from around here."),
-            ("Daemon",     "Pitch -10 + dark ring mod + heavy reverb."),
-            ("Vintage",    "Lo-fi bit reduction + echo. Worn tape machine."),
+            ("Robot",         "Phase vocoder roboticization for a robotic buzz."),
+            ("Alien",         "Pitch shift + ring modulator. Not from around here."),
+            ("Daemon",        "Pitch -10 + dark ring mod + heavy reverb."),
+            ("Vintage",       "Lo-fi bit reduction + echo. Worn tape machine."),
+            ("Tremolo Voice", "Clean mic with amplitude-modulated tremolo."),
         ]),
     ];
 
@@ -138,11 +144,11 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.add_space(8.0);
 
     // ── Themes ────────────────────────────────────────────────────────────────
-    ui.label(RichText::new("Themes  (18 colour palettes)").strong());
+    ui.label(RichText::new("Themes  (19 colour palettes)").strong());
     ui.add_space(4.0);
 
     let theme_groups: &[(&str, &str)] = &[
-        ("Neon",  "Neon Void · Cyber Rift · Neon Dusk · Glitch Mode · Jacked In"),
+        ("Neon",  "Neon Void · Cyber Rift · Neon Dusk · Glitch Mode · Jacked In · Lucky"),
         ("Fire",  "Solar Flare · Blood Moon · Inferno · Coral Storm · Molten Glow"),
         ("Dark",  "Acid Rain · Toxic Slime · Deep Space · Arctic Nova · Vaporwave · Galactic · Candy Pop · Ultraviolet"),
     ];
