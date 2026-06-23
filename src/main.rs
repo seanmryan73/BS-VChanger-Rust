@@ -14,7 +14,7 @@ fn main() -> eframe::Result<()> {
             .with_title("BS-VChanger")
             .with_inner_size([1280.0, 820.0])
             .with_min_inner_size([900.0, 560.0])
-            .with_icon(bs_icon()),
+            .with_icon(build_icon()),
         ..Default::default()
     };
 
@@ -25,23 +25,20 @@ fn main() -> eframe::Result<()> {
     )
 }
 
-/// Generates a 32×32 RGBA icon with pixel-art "BS" on a dark background.
-fn bs_icon() -> eframe::egui::IconData {
+/// Generates a 32×32 RGBA icon with pixel-art "BV" in golden yellow on near-black.
+fn build_icon() -> eframe::egui::IconData {
     const SZ: usize = 32;
     let mut px = vec![0u8; SZ * SZ * 4];
 
-    // Background: dark navy
     for chunk in px.chunks_mut(4) {
-        chunk[0] = 0x12;
-        chunk[1] = 0x12;
-        chunk[2] = 0x1e;
+        chunk[0] = 0x07;
+        chunk[1] = 0x07;
+        chunk[2] = 0x0b;
         chunk[3] = 0xff;
     }
 
-    // Foreground: bright cyan (matches Neon accent, visible on both themes)
-    let fg: [u8; 4] = [0x00, 0xe5, 0xc8, 0xff];
+    let fg: [u8; 4] = [0xff, 0xe0, 0x00, 0xff]; // golden yellow
 
-    // 5×7 pixel-art bitmaps
     let b: [[u8; 5]; 7] = [
         [1, 1, 1, 1, 0],
         [1, 0, 0, 0, 1],
@@ -51,14 +48,14 @@ fn bs_icon() -> eframe::egui::IconData {
         [1, 0, 0, 0, 1],
         [1, 1, 1, 1, 0],
     ];
-    let s: [[u8; 5]; 7] = [
-        [0, 1, 1, 1, 1],
-        [1, 0, 0, 0, 0],
-        [1, 0, 0, 0, 0],
-        [0, 1, 1, 1, 0],
-        [0, 0, 0, 0, 1],
-        [0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 0],
+    let v: [[u8; 5]; 7] = [
+        [1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1],
+        [0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0],
+        [0, 0, 1, 0, 0],
     ];
 
     let scale: usize = 2;
@@ -66,7 +63,7 @@ fn bs_icon() -> eframe::egui::IconData {
     let lh = 7 * scale;
     let gap: usize = 4;
     let ox_b = (SZ - lw * 2 - gap) / 2;
-    let ox_s = ox_b + lw + gap;
+    let ox_v = ox_b + lw + gap;
     let oy   = (SZ - lh) / 2;
 
     let mut stamp = |bitmap: &[[u8; 5]; 7], ox: usize| {
@@ -88,7 +85,7 @@ fn bs_icon() -> eframe::egui::IconData {
     };
 
     stamp(&b, ox_b);
-    stamp(&s, ox_s);
+    stamp(&v, ox_v);
 
     eframe::egui::IconData { rgba: px, width: SZ as u32, height: SZ as u32 }
 }
