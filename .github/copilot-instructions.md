@@ -4,7 +4,9 @@ This repository follows the shared Rust desktop conventions documented in the Ob
 
 ## Shared reference
 
-- Obsidian note: `Notes/Claude/Reference/Rust-Desktop-Standards.md`
+Obsidian vault note: `c:\_repos\Obsidian\Notes\Claude\Reference\Rust-Desktop-Standards.md`
+
+Also: `c:\_repos\Obsidian\Notes\Claude\Reference\Author-Version-Standards.md`
 
 ## Working rules
 
