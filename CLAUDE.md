@@ -4,17 +4,14 @@
 
 Real-time voice changer for Windows. Captures mic audio via WASAPI, processes it through a configurable chain of 17 DSP effects, and routes output to monitor (speakers) and/or virtual (VB-CABLE) destinations. Primary use case: clean voice and noise reduction for calls/streaming — not entertainment effects.
 
-## Reference notes (read these for standards)
+## Shared reference notes
 
-- Rust desktop standards: `C:\_repos\Obsidian\Notes\Claude\Reference\Rust-Desktop-Standards.md`
-- Author / version / company: `C:\_repos\Obsidian\Notes\Claude\Reference\Author-Version-Standards.md`
-- Project details: `C:\_repos\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md`
+@c:\_repos\Obsidian\Notes\Claude\Reference\Author-Version-Standards.md
+@c:\_repos\Obsidian\Notes\Claude\Reference\Rust-Desktop-Standards.md
 
-## Author / version standard
+## Project context
 
-- Author: Sean Ryan <seanmryan@gmail.com>
-- Company: BagPipes
-- Version format: `YYYY.MM.DD`
+@c:\_repos\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md
 
 ## Pinned dependency versions — do not change without a concrete reason
 
@@ -38,3 +35,14 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI, processes it
 - Prefer minimal, targeted edits.
 - Keep egui-family crate versions aligned when changing dependencies (all must be `0.29`).
 - Do not introduce new dependencies without a concrete reason.
+
+## After this session
+
+When the session ends or the user says to wrap up, update the project context note:
+`c:\_repos\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md`
+
+Update these sections:
+- **Current constraints** — add any new version pins, banned patterns, or architecture rules discovered
+- **Fix history** — add bugs fixed with root cause (one line each: date · symptom · cause · fix)
+- **Next actions** — replace with the current list
+- **frontmatter `version:`** — set to today's date (YYYY.MM.DD)
