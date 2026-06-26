@@ -1,4 +1,5 @@
 # BS-VChanger v2026.06.20
+![CI](https://github.com/seanmryan73/BS-VChanger-Rust/actions/workflows/ci.yml/badge.svg)
 
 Real-time voice changer for Windows. Built with Rust + egui.
 
