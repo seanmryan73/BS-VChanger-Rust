@@ -1,8 +1,6 @@
 # BS-VChanger-Rust — Claude Context
 
-## What this repo is
-
-Real-time voice changer for Windows. Captures mic audio via WASAPI, processes it through a configurable chain of 17 DSP effects, and routes output to monitor (speakers) and/or virtual (VB-CABLE) destinations. Primary use case: clean voice and noise reduction for calls/streaming — not entertainment effects.
+Real-time voice changer for Windows. Captures mic audio via WASAPI (`cpal`), processes it through a configurable chain of 17 DSP effects, and routes output to monitor and/or virtual (VB-CABLE) destinations. Primary use case: clean voice and noise reduction. Ships as a single ~5 MB standalone EXE, no installer.
 
 ## Shared reference notes
 
@@ -18,23 +16,24 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI, processes it
 | Crate | Pinned version | Why |
 |-------|---------------|-----|
 | egui / eframe | `0.29` | Intentionally pinned; upgrade all egui-family crates together or not at all |
-| nnnoiseless | current | Only C-backed crate — wraps Xiph RNNoise; no pure-Rust alternative at this noise quality |
+| cpal | `0.15` | WASAPI audio I/O; pinned for stability |
+| nnnoiseless | `0.5` | RNNoise C binding; requires MSVC build tools installed |
 
-## Key constraints
+## Critical constraints
 
-- **Audio thread is lock-free** — `ringbuf` only in the hot path; no `Mutex` allowed on the audio callback thread.
-- **`nnnoiseless` (RNNoise)** is the only C-backed crate — acceptable; no pure-Rust alternative exists at this quality level.
-- **Windows-only:** WASAPI + Direct3D/OpenGL via GPU driver.
-- **App data:** All persistent data goes to `%APPDATA%\BS-VChanger-Rust\` — never the EXE directory.
-- **19-theme system:** Existing multi-theme set (NeonVoid, CyberRift, AcidRain, CoralStorm, Lucky, etc.); do not replace with the standard 5-theme `ThemeManager`.
-- **`#![deny(unsafe_code)]` is missing** — should be added; the app has zero unsafe blocks.
+- **egui/eframe pinned at 0.29** — do not apply 0.34 API patterns here.
+- **Lock-free audio callback** — the `cpal` hot path uses only `ringbuf` and `try_lock()`. Never use blocking mutexes in the audio callback. If a lock can't be acquired, skip that batch.
+- **RNNoise @ 48 kHz only** — `nnnoiseless` requires exactly 48 kHz; the effect is bypassed at other sample rates. Do not break this guard.
+- **19-theme custom enum** — do not replace with egui's ThemeManager. Themes: NeonVoid, CyberRift, AcidRain, SolarFlare, BloodMoon, CandyPop, ToxicSlime, DeepSpace, Inferno, GlitchMode, ArcticNova, Vaporwave, Galactic, CoralStorm, Ultraviolet, NeonDusk, JackedIn, MoltenGlow, Lucky.
+- **No unsafe code** — `#![deny(unsafe_code)]` in `main.rs`.
+- **`nnnoiseless` requires MSVC** — C compiler required; `cargo build` fails without Visual Studio Build Tools.
+- **VB-CABLE is a runtime requirement** — virtual output routing requires VB-CABLE installed. App still runs in monitor-only mode without it.
 
 ## Working rules
 
-- Follow Rust-Desktop-Standards.md unless this repo documents a deliberate exception.
+- Follow Rust-Desktop-Standards.md unless the project note documents a deliberate exception.
 - Prefer minimal, targeted edits.
-- Keep egui-family crate versions aligned when changing dependencies (all must be `0.29`).
-- Do not introduce new dependencies without a concrete reason.
+- Effect chain rebuild: UI calls `apply_chain()` to rebuild from `live_effects` config — do not mutate the chain in place.
 
 ## After this session
 
