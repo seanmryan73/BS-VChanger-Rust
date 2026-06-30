@@ -78,7 +78,13 @@ impl RealtimeAudioEngine {
                     let g = f32::from_bits(gain.load(Ordering::Relaxed));
                     if g != 1.0 { for s in &mut mono { *s *= g; } }
                     level.push(&mono);
-                    chain.lock().process(&mut mono, sample_rate);
+                    // try_lock, not lock: apply_chain() (UI thread) only holds this
+                    // lock for a pointer swap, but the callback must never block —
+                    // skip effects for this batch (pass audio through dry) rather
+                    // than risk an XRUN if it's ever contended.
+                    if let Some(mut c) = chain.try_lock() {
+                        c.process(&mut mono, sample_rate);
+                    }
                     spec.push(&mono);
                     if want_monitor { mon_prod.push_slice(&mono); }
                     if want_virtual { virt_prod.push_slice(&mono); }

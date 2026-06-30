@@ -154,7 +154,13 @@ impl App {
     // ── Chain ─────────────────────────────────────────────────────────────────
 
     fn apply_chain(&mut self) {
-        *self.effect_chain.lock() = build_chain(&self.live_effects);
+        // Build off-lock (allocates effect buffers, e.g. reverb/noise-suppression
+        // setup) so the realtime audio callback never blocks on construction —
+        // only on the swap itself. Old chain is dropped after the lock is
+        // released too, so its teardown can't stall the callback either.
+        let new_chain = build_chain(&self.live_effects);
+        let old_chain = std::mem::replace(&mut *self.effect_chain.lock(), new_chain);
+        drop(old_chain);
     }
 
     fn select_profile(&mut self, idx: usize) {

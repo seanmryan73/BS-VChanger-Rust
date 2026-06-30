@@ -5,6 +5,7 @@
 
 const BG: [u8; 4] = [0x07, 0x07, 0x0B, 0xFF];
 const FG: [u8; 4] = [0xFF, 0xE0, 0x00, 0xFF]; // golden yellow
+const BORDER: [u8; 4] = [0x00, 0x1F, 0xFF, 0xFF]; // Indigo — complementary accent
 
 const GLYPH_B: [[u8; 5]; 7] = [
     [1, 1, 1, 1, 0],
@@ -25,9 +26,10 @@ const GLYPH_V: [[u8; 5]; 7] = [
     [0, 0, 1, 0, 0],
 ];
 
-/// Draws the "BV" glyph pair on a `size`x`size` canvas, scaling the 32x32
-/// reference layout (block scale 2, 4px gap, glyphs + gap centered
-/// horizontally, vertically centered) up or down.
+/// Draws the "BV" glyph pair plus a complementary-color top/right border on
+/// a `size`x`size` canvas, scaling the 32x32 reference layout (block scale
+/// 2, 4px gap, glyphs + gap centered horizontally, vertically centered) up
+/// or down.
 pub fn draw_icon_rgba(size: u32) -> Vec<u8> {
     let size = size as usize;
     let scale = size as f64 / 32.0;
@@ -63,5 +65,20 @@ pub fn draw_icon_rgba(size: u32) -> Vec<u8> {
             }
         }
     }
+
+    let thickness = (size / 16).max(1).min(size);
+    for py in 0..thickness {
+        for px in 0..size {
+            let i = (py * size + px) * 4;
+            rgba[i..i + 4].copy_from_slice(&BORDER);
+        }
+    }
+    for py in 0..size {
+        for px in (size - thickness)..size {
+            let i = (py * size + px) * 4;
+            rgba[i..i + 4].copy_from_slice(&BORDER);
+        }
+    }
+
     rgba
 }
