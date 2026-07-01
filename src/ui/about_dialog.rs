@@ -314,6 +314,13 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
         ui.label(RichText::new("Stack").strong().color(muted).small());
         ui.label(RichText::new("Rust · egui · WASAPI · RNNoise · rubato").color(muted));
     });
+    ui.horizontal(|ui| {
+        ui.label(RichText::new("Support").strong().color(muted).small());
+        ui.hyperlink_to(
+            RichText::new("☕ Support on Ko-fi").color(accent),
+            "https://ko-fi.com/bagofpipes",
+        );
+    });
 
     ui.add_space(8.0);
 
