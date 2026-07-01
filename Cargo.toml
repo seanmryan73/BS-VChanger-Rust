@@ -2,6 +2,7 @@
 name = "bs-vchanger"
 version = "2026.6.20"
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 eframe    = "0.29"
