@@ -23,10 +23,10 @@ use crate::ui::{about_dialog, spectrum_panel::SpectrumPanel};
 
 // ── Grouped profile categories (built-in only) ────────────────────────────────
 const PROFILE_GROUPS: &[(&str, usize, usize)] = &[
-    ("CLEAN VOICE",       1,  10),
-    ("PITCH & CHARACTER", 10, 18),
-    ("SPACE & ROOM",      18, 21),
-    ("CREATIVE",          21, 26),
+    ("CLEAN VOICE",       1,  11),
+    ("PITCH & CHARACTER", 11, 19),
+    ("SPACE & ROOM",      19, 22),
+    ("CREATIVE",          22, 27),
 ];
 
 pub struct App {
@@ -219,7 +219,9 @@ impl App {
     fn start_engine(&mut self) {
         let cfg = StartConfig {
             input_name:   self.selected_input.clone(),
-            monitor_name: self.monitor_enabled.then(|| self.selected_monitor.clone()),
+            monitor_name: self.monitor_enabled
+                .then(|| self.selected_monitor.clone())
+                .filter(|s| !s.is_empty()),
             virtual_name: self.virtual_enabled
                 .then(|| self.selected_virtual.clone())
                 .filter(|s| !s.is_empty()),
@@ -969,12 +971,33 @@ fn effect_summary(t: EffectType, params: &HashMap<String, f64>) -> String {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every built-in profile after Passthrough must fall in exactly one UI
+    /// group, with no gaps — otherwise profiles silently vanish from the list.
+    #[test]
+    fn profile_groups_cover_all_built_ins() {
+        let count = built_in::all().len();
+        let mut expected_start = 1; // index 0 is Passthrough, rendered separately
+        for &(name, start, end) in PROFILE_GROUPS {
+            assert_eq!(start, expected_start, "group '{name}' leaves a gap or overlaps");
+            assert!(end > start, "group '{name}' is empty");
+            expected_start = end;
+        }
+        assert_eq!(expected_start, count, "groups must end exactly at the built-in count");
+    }
+}
+
 fn effect_params_ui(ui: &mut Ui, t: EffectType, params: &mut HashMap<String, f64>) -> bool {
     let mut changed = false;
 
     macro_rules! slider {
         ($label:expr, $key:expr, $lo:expr, $hi:expr, $default:expr) => {{
-            let mut v = *params.entry($key.into()).or_insert($default) as f32;
+            // Read without inserting: or_insert would mutate live_effects just by
+            // rendering the sliders, spuriously marking the profile dirty.
+            let mut v = params.get($key).copied().unwrap_or($default) as f32;
             if ui.add(egui::Slider::new(&mut v, ($lo as f32)..=($hi as f32)).text($label)).changed() {
                 params.insert($key.into(), v as f64);
                 changed = true;
