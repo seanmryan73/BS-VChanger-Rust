@@ -29,7 +29,7 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.vertical_centered(|ui| {
         ui.add_space(8.0);
         ui.label(RichText::new("BS").size(28.0).strong().color(accent));
-        ui.label(RichText::new("▸ VCHANGER").size(13.0).color(muted));
+        ui.label(RichText::new("› VCHANGER").size(13.0).color(muted));
         ui.add_space(4.0);
         ui.label(RichText::new(format!("v{VERSION}  •  Real-time voice changer for Windows"))
             .color(muted).small());

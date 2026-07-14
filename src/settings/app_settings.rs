@@ -33,7 +33,7 @@ impl Default for AppSettings {
             monitor_enabled:     true,
             virtual_enabled:     false,
             last_profile_name:   Some("BagPipe Clean".into()),
-            theme:               ThemeChoice::CoralStorm,
+            theme:               ThemeChoice::Lucky,
             category_expanded:   [true; 4],
             auto_start:          false,
             input_gain:          1.0,

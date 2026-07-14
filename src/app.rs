@@ -292,7 +292,7 @@ impl App {
         self.selected_profile = Some(0);
         if let Some(p) = self.profiles.first() { self.live_effects = p.effects.clone(); }
         self.apply_chain();
-        self.theme.choice = ThemeChoice::CoralStorm;
+        self.theme.choice = ThemeChoice::Lucky;
         self.theme.apply(ctx);
         self.auto_start = false;
         self.input_gain.store(1.0f32.to_bits(), Ordering::Relaxed);
@@ -417,7 +417,7 @@ fn show_header(app: &mut App, ctx: &Context) {
                 ui.add_space(4.0);
                 ui.label(RichText::new("BS").size(22.0).strong().color(theme.accent));
                 ui.add_space(1.0);
-                ui.label(RichText::new("▸ VCHANGER").size(12.0).color(theme.text_muted));
+                ui.label(RichText::new("› VCHANGER").size(12.0).color(theme.text_muted));
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.add(
@@ -462,7 +462,7 @@ fn show_status_bar(app: &App, ctx: &Context) {
                 let (dot_color, status_str) = match app.status.as_str() {
                     "Running" => (
                         Color32::from_rgb(0x40, 0xcc, 0x70),
-                        format!("● Running  {}kHz", app.audio_sample_rate / 1000),
+                        format!("⚫ Running  {}kHz", app.audio_sample_rate / 1000),
                     ),
                     "Error" => (Color32::from_rgb(0xe0, 0x50, 0x50), "✖ Error".to_string()),
                     _       => (Color32::from_rgb(0x44, 0x44, 0x60), "○ Stopped".to_string()),
@@ -516,7 +516,7 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                     for (group_idx, &(group_name, start, end)) in PROFILE_GROUPS.iter().enumerate() {
                         if group_idx > 0 { ui.add_space(4.0); }
                         let expanded = app.category_expanded[group_idx];
-                        let arrow = if expanded { "▼" } else { "▶" };
+                        let arrow = if expanded { "⏷" } else { "⏵" };
                         let hdr = ui.add(egui::Button::new(
                             RichText::new(format!("{arrow}  {group_name}"))
                                 .color(theme.text_muted).small().strong()
@@ -580,7 +580,7 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                                         to_delete = Some(rel);
                                     }
                                     if is_dirty && ui.add(egui::Button::new(
-                                        RichText::new("↑").color(Color32::from_rgb(0x44, 0xaa, 0x55))
+                                        RichText::new("⬆").color(Color32::from_rgb(0x44, 0xaa, 0x55))
                                     ).frame(false))
                                     .on_hover_text("Save changes to this profile")
                                     .clicked() {
