@@ -31,7 +31,7 @@ fn main() -> eframe::Result<()> {
     )
 }
 
-/// Generates a 32×32 RGBA icon with pixel-art "BV" in golden yellow on near-black.
+/// Generates a 32×32 RGBA icon: an anti-aliased rose-pink sound-wave pictogram on near-black.
 fn build_icon() -> eframe::egui::IconData {
     const SIZE: u32 = 32;
     eframe::egui::IconData { rgba: icon_art::draw_icon_rgba(SIZE), width: SIZE, height: SIZE }
