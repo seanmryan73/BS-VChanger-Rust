@@ -7,15 +7,6 @@ const BG: [u8; 4] = [0x07, 0x07, 0x0B, 0xFF];
 const FG: [u8; 4] = [0xFF, 0xE0, 0x00, 0xFF]; // golden yellow
 const BORDER: [u8; 4] = [0x00, 0x1F, 0xFF, 0xFF]; // Indigo — complementary accent
 
-const GLYPH_B: [[u8; 5]; 7] = [
-    [1, 1, 1, 1, 0],
-    [1, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1],
-    [1, 1, 1, 1, 0],
-    [1, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1],
-    [1, 1, 1, 1, 0],
-];
 const GLYPH_V: [[u8; 5]; 7] = [
     [1, 0, 0, 0, 1],
     [1, 0, 0, 0, 1],
@@ -25,8 +16,17 @@ const GLYPH_V: [[u8; 5]; 7] = [
     [0, 1, 0, 1, 0],
     [0, 0, 1, 0, 0],
 ];
+const GLYPH_C: [[u8; 5]; 7] = [
+    [0, 1, 1, 1, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0],
+];
 
-/// Draws the "BV" glyph pair plus a complementary-color top/right border on
+/// Draws the "VC" glyph pair plus a complementary-color top/right border on
 /// a `size`x`size` canvas, scaling the 32x32 reference layout (block scale
 /// 2, 4px gap, glyphs + gap centered horizontally, vertically centered) up
 /// or down.
@@ -42,11 +42,11 @@ pub fn draw_icon_rgba(size: u32) -> Vec<u8> {
     let lw = 5 * block;
     let lh = 7 * block;
     let gap = ((4.0 * scale).round() as usize).max(1);
-    let ox_b = size.saturating_sub(lw * 2 + gap) / 2;
-    let ox_v = ox_b + lw + gap;
+    let ox_v = size.saturating_sub(lw * 2 + gap) / 2;
+    let ox_c = ox_v + lw + gap;
     let oy = size.saturating_sub(lh) / 2;
 
-    for (glyph, x0) in [(&GLYPH_B, ox_b), (&GLYPH_V, ox_v)] {
+    for (glyph, x0) in [(&GLYPH_V, ox_v), (&GLYPH_C, ox_c)] {
         for (row, bits) in glyph.iter().enumerate() {
             for (col, &on) in bits.iter().enumerate() {
                 if on == 0 {
