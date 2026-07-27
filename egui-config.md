@@ -192,7 +192,7 @@ fn reset_to_defaults(&mut self, ctx: &Context) {
     self.selected_profile = Some(0);
     if let Some(p) = self.profiles.first() { self.live_effects = p.effects.clone(); }
     self.apply_chain();
-    self.theme.choice = ThemeChoice::BagpipesGreen;
+    self.theme.choice = ThemeChoice::Lucky;
     self.theme.apply(ctx);
     self.auto_start = false;
     self.input_gain.store(1.0f32.to_bits(), Ordering::Relaxed);
