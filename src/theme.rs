@@ -193,6 +193,9 @@ impl ThemeManager {
         style.spacing.button_padding = eframe::egui::vec2(10.0, 5.0);
         style.spacing.slider_width   = 140.0;
         style.spacing.interact_size  = eframe::egui::vec2(18.0, 18.0);
+        // Solid, muted scrollbar (uses widget bg_fill, not raw accent) — avoids the
+        // default floating style's invisible-then-neon-bright-on-hover jump.
+        style.spacing.scroll = eframe::egui::style::ScrollStyle::solid();
 
         ctx.set_style(style);
     }

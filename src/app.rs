@@ -486,6 +486,20 @@ fn show_status_bar(app: &App, ctx: &Context) {
 
 // ── Left panel: Profile list ──────────────────────────────────────────────────
 
+/// Space reserved for the trailing ×/⬆ icon buttons on user-profile rows, so the
+/// name button's width doesn't jump when the dirty-state ⬆ icon appears/disappears.
+const PROFILE_ROW_ICON_RESERVE: f32 = 46.0;
+
+/// Inset accent capsule marking the selected profile row.
+fn paint_selection_bar(ui: &Ui, rect: egui::Rect, accent: Color32) {
+    let inset = 3.0;
+    let bar = egui::Rect::from_min_size(
+        rect.left_top() + egui::vec2(0.0, inset),
+        egui::vec2(3.0, rect.height() - inset * 2.0),
+    );
+    ui.painter().rect_filled(bar, egui::Rounding::same(1.5), accent);
+}
+
 fn show_profile_panel(app: &mut App, ctx: &Context) {
     let theme = app.theme.current();
 
@@ -506,12 +520,9 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                         let resp = ui.add(egui::Button::new(
                             RichText::new("Passthrough")
                                 .color(if selected { Color32::WHITE } else { theme.text }),
-                        ).selected(selected));
+                        ).selected(selected).min_size(egui::vec2(ui.available_width(), 0.0)));
                         if selected {
-                            ui.painter().rect_filled(
-                                egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
-                                0.0, theme.accent,
-                            );
+                            paint_selection_bar(ui, resp.rect, theme.accent);
                         }
                         if resp.clicked() && !selected { app.select_profile(0); }
                     }
@@ -537,12 +548,9 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                                 let resp = ui.add(egui::Button::new(
                                     RichText::new(format!("  {name}"))
                                         .color(if selected { Color32::WHITE } else { theme.text }),
-                                ).selected(selected));
+                                ).selected(selected).min_size(egui::vec2(ui.available_width(), 0.0)));
                                 if selected {
-                                    ui.painter().rect_filled(
-                                        egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
-                                        0.0, theme.accent,
-                                    );
+                                    paint_selection_bar(ui, resp.rect, theme.accent);
                                 }
                                 if resp.clicked() && !selected { app.select_profile(i); }
                             }
@@ -565,15 +573,13 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                             let is_dirty = selected
                                 && app.live_effects != app.profiles[abs].effects;
                             ui.horizontal(|ui| {
+                                let name_width = (ui.available_width() - PROFILE_ROW_ICON_RESERVE).max(0.0);
                                 let resp = ui.add(egui::Button::new(
                                     RichText::new(format!("  {name}"))
                                         .color(if selected { Color32::WHITE } else { theme.text }),
-                                ).selected(selected));
+                                ).selected(selected).min_size(egui::vec2(name_width, 0.0)));
                                 if selected {
-                                    ui.painter().rect_filled(
-                                        egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
-                                        0.0, theme.accent,
-                                    );
+                                    paint_selection_bar(ui, resp.rect, theme.accent);
                                 }
                                 if resp.clicked() && !selected { app.select_profile(abs); }
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -793,7 +799,7 @@ fn show_effect_panel(app: &mut App, ctx: &Context) {
         // Spectrum — taller to show bars + reflection zone
         let spec_height = (ui.available_height() * 0.46).clamp(180.0, 320.0);
         ui.allocate_ui(egui::vec2(ui.available_width(), spec_height), |ui| {
-            app.spectrum_panel.show(ui, accent, active);
+            app.spectrum_panel.show(ui, theme.selection_bg, active);
         });
 
         // ── Effect chain header with optional Reset button ────────────────────
