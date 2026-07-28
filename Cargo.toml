@@ -6,7 +6,7 @@ license = "MIT"
 
 [dependencies]
 eframe    = "0.29"
-egui      = "0.29"
+egui      = "0.34"
 cpal      = "0.15"
 ringbuf   = "0.4"
 rubato    = "0.15"
