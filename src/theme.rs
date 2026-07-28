@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub enum ThemeChoice {
     CoralStorm,
-    CandyPop,
-    GlitchMode,
+    Shibui,
+    Kasane,
     ColdSteel,
     #[default]
     Lucky,
@@ -15,8 +15,8 @@ impl ThemeChoice {
     pub fn label(self) -> &'static str {
         match self {
             ThemeChoice::CoralStorm => "Coral Storm",
-            ThemeChoice::CandyPop   => "Candy Pop",
-            ThemeChoice::GlitchMode => "Glitch Mode",
+            ThemeChoice::Shibui     => "Shibui",
+            ThemeChoice::Kasane     => "Kasane",
             ThemeChoice::ColdSteel  => "Cold Steel",
             ThemeChoice::Lucky      => "Lucky",
         }
@@ -24,8 +24,8 @@ impl ThemeChoice {
 
     pub const ALL: &'static [ThemeChoice] = &[
         ThemeChoice::CoralStorm,
-        ThemeChoice::CandyPop,
-        ThemeChoice::GlitchMode,
+        ThemeChoice::Shibui,
+        ThemeChoice::Kasane,
         ThemeChoice::ColdSteel,
         ThemeChoice::Lucky,
     ];
@@ -60,33 +60,33 @@ impl AppTheme {
         }
     }
 
-    pub fn candy_pop() -> Self {
+    pub fn shibui() -> Self {
         Self {
-            background:    Color32::from_rgb(0x10, 0x00, 0x08),
-            panel:         Color32::from_rgb(0x1e, 0x00, 0x12),
-            accent:        Color32::from_rgb(0xff, 0x00, 0x88),
-            accent_alt:    Color32::from_rgb(0x00, 0xff, 0xaa),
-            text:          Color32::from_rgb(0xff, 0xdd, 0xee),
-            text_muted:    Color32::from_rgb(0xaa, 0x00, 0x55),
-            slider_track:  Color32::from_rgb(0x28, 0x00, 0x18),
-            selection_bg:  Color32::from_rgb(0x77, 0x00, 0x33),
-            border:        Color32::from_rgb(0x30, 0x00, 0x1e),
-            widget_border: Color32::from_rgb(0xaa, 0x00, 0x55),
+            background:    Color32::from_rgb(0x14, 0x0a, 0x0c),
+            panel:         Color32::from_rgb(0x24, 0x13, 0x18),
+            accent:        Color32::from_rgb(0xdf, 0xa2, 0x3d),
+            accent_alt:    Color32::from_rgb(0x7c, 0x93, 0xa8),
+            text:          Color32::from_rgb(0xed, 0xe3, 0xd6),
+            text_muted:    Color32::from_rgb(0x7a, 0x27, 0x32),
+            slider_track:  Color32::from_rgb(0x1c, 0x0f, 0x12),
+            selection_bg:  Color32::from_rgb(0x76, 0x7c, 0x33),
+            border:        Color32::from_rgb(0x18, 0x0d, 0x10),
+            widget_border: Color32::from_rgb(0x6b, 0x57, 0x70),
         }
     }
 
-    pub fn glitch_mode() -> Self {
+    pub fn kasane() -> Self {
         Self {
-            background:    Color32::from_rgb(0x00, 0x03, 0x00),
-            panel:         Color32::from_rgb(0x00, 0x08, 0x02),
-            accent:        Color32::from_rgb(0x00, 0xff, 0x66),
-            accent_alt:    Color32::from_rgb(0xff, 0x00, 0xcc),
-            text:          Color32::from_rgb(0xcc, 0xff, 0xdd),
-            text_muted:    Color32::from_rgb(0x00, 0x77, 0x33),
-            slider_track:  Color32::from_rgb(0x00, 0x10, 0x00),
-            selection_bg:  Color32::from_rgb(0x00, 0x44, 0x22),
-            border:        Color32::from_rgb(0x00, 0x1c, 0x06),
-            widget_border: Color32::from_rgb(0x00, 0x77, 0x33),
+            background:    Color32::from_rgb(0x0d, 0x07, 0x14),
+            panel:         Color32::from_rgb(0x1c, 0x0f, 0x2b),
+            accent:        Color32::from_rgb(0xe1, 0x40, 0x1d),
+            accent_alt:    Color32::from_rgb(0xa0, 0xcc, 0x78),
+            text:          Color32::from_rgb(0xf7, 0xcf, 0xd4),
+            text_muted:    Color32::from_rgb(0xa8, 0x7c, 0xc2),
+            slider_track:  Color32::from_rgb(0x17, 0x0c, 0x22),
+            selection_bg:  Color32::from_rgb(0xf0, 0x84, 0x80),
+            border:        Color32::from_rgb(0x14, 0x0a, 0x1e),
+            widget_border: Color32::from_rgb(0xe7, 0xb3, 0x3d),
         }
     }
 
@@ -133,8 +133,8 @@ impl ThemeManager {
     pub fn current(&self) -> AppTheme {
         match self.choice {
             ThemeChoice::CoralStorm => AppTheme::coral_storm(),
-            ThemeChoice::CandyPop   => AppTheme::candy_pop(),
-            ThemeChoice::GlitchMode => AppTheme::glitch_mode(),
+            ThemeChoice::Shibui     => AppTheme::shibui(),
+            ThemeChoice::Kasane     => AppTheme::kasane(),
             ThemeChoice::ColdSteel  => AppTheme::cold_steel(),
             ThemeChoice::Lucky      => AppTheme::lucky(),
         }

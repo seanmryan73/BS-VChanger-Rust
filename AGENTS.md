@@ -27,7 +27,7 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI (`cpal`), pro
 - **egui/eframe pinned at 0.29** — do not apply 0.34 API patterns here.
 - **Lock-free audio callback** — the `cpal` hot path uses only `ringbuf` and `try_lock()`. Never use blocking mutexes in the audio callback. If a lock can't be acquired, skip that batch.
 - **RNNoise @ 48 kHz only** — `nnnoiseless` requires exactly 48 kHz; the effect is bypassed at other sample rates. Do not break this guard.
-- **5-theme custom enum** — matches the `Rust-Desktop-Standards.md` 5-theme standard; do not replace with egui's ThemeManager. Themes: CoralStorm, CandyPop, GlitchMode, ColdSteel, Lucky (default).
+- **5-theme custom enum** — matches the `Rust-Desktop-Standards.md` 5-theme standard; do not replace with egui's ThemeManager. Themes: CoralStorm, Shibui, Kasane, ColdSteel, Lucky (default).
 - **No unsafe code** — `#![deny(unsafe_code)]` in `main.rs`.
 - **`nnnoiseless` requires MSVC** — C compiler required; `cargo build` fails without Visual Studio Build Tools.
 - **VB-CABLE is a runtime requirement** — virtual output routing requires VB-CABLE installed. App still runs in monitor-only mode without it.

@@ -1,6 +1,6 @@
 // Author  : Sean Ryan <seanmryan@gmail.com>
 // Company : BagPipes
-// Version : 2026.06.20
+// Version : 2026.07.27
 
 #![windows_subsystem = "windows"]
 #![deny(unsafe_code)]

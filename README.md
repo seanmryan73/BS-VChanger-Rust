@@ -1,4 +1,4 @@
-# BS-VChanger v2026.06.20
+# BS-VChanger v2026.07.27
 ![CI](https://github.com/seanmryan73/BS-VChanger-Rust/actions/workflows/ci.yml/badge.svg)
 
 Real-time voice changer for Windows. Built with Rust + egui.
@@ -9,7 +9,7 @@ Real-time voice changer for Windows. Built with Rust + egui.
 
 - **27 built-in voice profiles** across 6 categories: Clean Voice, Pitch & Character, Telephone & Radio, Space & Room, Creative, plus Passthrough
 - **17 DSP effects**: noise suppression, pitch shift, compressor, de-esser, reverb, echo, chorus, flanger, distortion, lo-fi, ring mod, robot, and more
-- **18 colour themes**: NeonVoid, CyberRift, AcidRain, SolarFlare, BloodMoon, CandyPop, ToxicSlime, DeepSpace, Inferno, GlitchMode, ArcticNova, Vaporwave, Galactic, CoralStorm, Ultraviolet, NeonDusk, JackedIn, MoltenGlow
+- **5 colour themes**: Coral Storm, Shibui, Kasane, Cold Steel, Lucky
 - **Real-time spectrum analyser** with frequency labels and reflection effect
 - **Dual output routing**: monitor (speakers/headphones) + virtual (VB-CABLE for Teams/Discord/OBS)
 - **Custom profiles**: save, update, and delete your own presets

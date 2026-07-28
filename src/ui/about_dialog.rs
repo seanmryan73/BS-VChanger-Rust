@@ -144,13 +144,11 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.add_space(8.0);
 
     // ── Themes ────────────────────────────────────────────────────────────────
-    ui.label(RichText::new("Themes  (19 colour palettes)").strong());
+    ui.label(RichText::new("Themes  (5 colour palettes)").strong());
     ui.add_space(4.0);
 
     let theme_groups: &[(&str, &str)] = &[
-        ("Neon",  "Neon Void · Cyber Rift · Neon Dusk · Glitch Mode · Jacked In · Lucky"),
-        ("Fire",  "Solar Flare · Blood Moon · Inferno · Coral Storm · Molten Glow"),
-        ("Dark",  "Acid Rain · Toxic Slime · Deep Space · Arctic Nova · Vaporwave · Galactic · Candy Pop · Ultraviolet"),
+        ("Standard", "Coral Storm · Shibui · Kasane · Cold Steel · Lucky"),
     ];
     for &(group, names) in theme_groups {
         ui.horizontal_wrapped(|ui| {
