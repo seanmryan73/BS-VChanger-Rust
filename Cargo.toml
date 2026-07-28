@@ -9,7 +9,7 @@ eframe    = "0.29"
 egui      = "0.29"
 cpal      = "0.15"
 ringbuf   = "0.4"
-rubato    = "0.15"
+rubato    = "3.0"
 nnnoiseless = "0.5"
 rustfft   = "6"
 serde     = { version = "1", features = ["derive"] }
