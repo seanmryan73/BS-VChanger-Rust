@@ -148,7 +148,7 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.add_space(4.0);
 
     let theme_groups: &[(&str, &str)] = &[
-        ("Standard", "Coral Storm · Shibui · Kasane · Cold Steel · Lucky"),
+        ("Standard", "Coral Storm · Shibui · Kasane · Cold Steel · Jizo"),
     ];
     for &(group, names) in theme_groups {
         ui.horizontal_wrapped(|ui| {

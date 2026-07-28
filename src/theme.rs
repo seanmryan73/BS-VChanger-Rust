@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 pub enum ThemeChoice {
     CoralStorm,
     Shibui,
+    #[default]
     Kasane,
     ColdSteel,
-    #[default]
-    Lucky,
+    Jizo,
 }
 
 impl ThemeChoice {
@@ -18,7 +18,7 @@ impl ThemeChoice {
             ThemeChoice::Shibui     => "Shibui",
             ThemeChoice::Kasane     => "Kasane",
             ThemeChoice::ColdSteel  => "Cold Steel",
-            ThemeChoice::Lucky      => "Lucky",
+            ThemeChoice::Jizo       => "Jizo",
         }
     }
 
@@ -27,7 +27,7 @@ impl ThemeChoice {
         ThemeChoice::Shibui,
         ThemeChoice::Kasane,
         ThemeChoice::ColdSteel,
-        ThemeChoice::Lucky,
+        ThemeChoice::Jizo,
     ];
 }
 
@@ -92,31 +92,31 @@ impl AppTheme {
 
     pub fn cold_steel() -> Self {
         Self {
-            background:    Color32::from_rgb(0x08, 0x08, 0x08),
-            panel:         Color32::from_rgb(0x10, 0x10, 0x10),
-            accent:        Color32::from_rgb(0x00, 0x88, 0xff),
-            accent_alt:    Color32::from_rgb(0x44, 0xbb, 0xff),
-            text:          Color32::from_rgb(0xec, 0xec, 0xec),
-            text_muted:    Color32::from_rgb(0x66, 0x66, 0x66),
-            slider_track:  Color32::from_rgb(0x1a, 0x1a, 0x1a),
-            selection_bg:  Color32::from_rgb(0x00, 0x44, 0xcc),
-            border:        Color32::from_rgb(0x28, 0x28, 0x28),
-            widget_border: Color32::from_rgb(0x48, 0x48, 0x48),
+            background:    Color32::from_rgb(0x0a, 0x0b, 0x0d),
+            panel:         Color32::from_rgb(0x16, 0x17, 0x1b),
+            accent:        Color32::from_rgb(0xff, 0x3f, 0x8f),
+            accent_alt:    Color32::from_rgb(0x7f, 0x97, 0xb3),
+            text:          Color32::from_rgb(0xe8, 0xec, 0xf1),
+            text_muted:    Color32::from_rgb(0x7f, 0x8f, 0xa6),
+            slider_track:  Color32::from_rgb(0x1c, 0x1e, 0x23),
+            selection_bg:  Color32::from_rgb(0xc6, 0x28, 0x39),
+            border:        Color32::from_rgb(0x23, 0x25, 0x29),
+            widget_border: Color32::from_rgb(0xc6, 0x28, 0x39),
         }
     }
 
-    pub fn lucky() -> Self {
+    pub fn jizo() -> Self {
         Self {
-            background:    Color32::from_rgb(0x14, 0x00, 0x2d),
-            panel:         Color32::from_rgb(0x2d, 0x08, 0x50),
-            accent:        Color32::from_rgb(0xff, 0x14, 0xd2),
-            accent_alt:    Color32::from_rgb(0xc3, 0xff, 0x28),
-            text:          Color32::from_rgb(0xc3, 0xff, 0x28),
-            text_muted:    Color32::from_rgb(0x00, 0xa0, 0x8c),
-            slider_track:  Color32::from_rgb(0x23, 0x04, 0x41),
-            selection_bg:  Color32::from_rgb(0xb4, 0x4b, 0x00),
-            border:        Color32::from_rgb(0x3c, 0x14, 0x5a),
-            widget_border: Color32::from_rgb(0x00, 0xa0, 0x8c),
+            background:    Color32::from_rgb(0x12, 0x0f, 0x0c),
+            panel:         Color32::from_rgb(0x1f, 0x19, 0x13),
+            accent:        Color32::from_rgb(0xb5, 0x28, 0x3a),
+            accent_alt:    Color32::from_rgb(0xb8, 0xc2, 0x3f),
+            text:          Color32::from_rgb(0xe3, 0xcf, 0xd2),
+            text_muted:    Color32::from_rgb(0x8f, 0x81, 0x75),
+            slider_track:  Color32::from_rgb(0x1a, 0x14, 0x0f),
+            selection_bg:  Color32::from_rgb(0x8f, 0x20, 0x30),
+            border:        Color32::from_rgb(0x18, 0x13, 0x10),
+            widget_border: Color32::from_rgb(0x6b, 0x5f, 0x52),
         }
     }
 }
@@ -127,7 +127,7 @@ pub struct ThemeManager {
 
 impl ThemeManager {
     pub fn new() -> Self {
-        Self { choice: ThemeChoice::Lucky }
+        Self { choice: ThemeChoice::Kasane }
     }
 
     pub fn current(&self) -> AppTheme {
@@ -136,7 +136,7 @@ impl ThemeManager {
             ThemeChoice::Shibui     => AppTheme::shibui(),
             ThemeChoice::Kasane     => AppTheme::kasane(),
             ThemeChoice::ColdSteel  => AppTheme::cold_steel(),
-            ThemeChoice::Lucky      => AppTheme::lucky(),
+            ThemeChoice::Jizo       => AppTheme::jizo(),
         }
     }
 
