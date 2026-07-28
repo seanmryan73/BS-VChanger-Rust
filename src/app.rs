@@ -431,8 +431,12 @@ fn show_header(app: &mut App, ctx: &Context) {
                         .selected_text(choice.label())
                         .width(120.0)
                         .show_ui(ui, |ui| {
+                            // Button (not selectable_value): idles in `inactive` visuals with a
+                            // border, so hovering doesn't add/remove a box → no bounce.
                             for &t in ThemeChoice::ALL {
-                                ui.selectable_value(&mut choice, t, t.label());
+                                if ui.add(egui::Button::new(t.label()).selected(t == choice)).clicked() {
+                                    choice = t;
+                                }
                             }
                         });
                     if choice != app.theme.choice {
@@ -497,11 +501,12 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                     // ── Passthrough (index 0, no effects) ─────────────────────
                     {
                         let selected = app.selected_profile == Some(0);
-                        let resp = ui.selectable_label(
-                            selected,
+                        // Button (not selectable_label): idles in `inactive` visuals with a
+                        // border, so hovering doesn't add/remove a box → no bounce.
+                        let resp = ui.add(egui::Button::new(
                             RichText::new("Passthrough")
                                 .color(if selected { Color32::WHITE } else { theme.text }),
-                        );
+                        ).selected(selected));
                         if selected {
                             ui.painter().rect_filled(
                                 egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
@@ -529,11 +534,10 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                             for i in start..end.min(app.profiles.len()) {
                                 let selected = app.selected_profile == Some(i);
                                 let name = app.profiles[i].name.clone();
-                                let resp = ui.selectable_label(
-                                    selected,
+                                let resp = ui.add(egui::Button::new(
                                     RichText::new(format!("  {name}"))
                                         .color(if selected { Color32::WHITE } else { theme.text }),
-                                );
+                                ).selected(selected));
                                 if selected {
                                     ui.painter().rect_filled(
                                         egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),
@@ -561,11 +565,10 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
                             let is_dirty = selected
                                 && app.live_effects != app.profiles[abs].effects;
                             ui.horizontal(|ui| {
-                                let resp = ui.selectable_label(
-                                    selected,
+                                let resp = ui.add(egui::Button::new(
                                     RichText::new(format!("  {name}"))
                                         .color(if selected { Color32::WHITE } else { theme.text }),
-                                );
+                                ).selected(selected));
                                 if selected {
                                     ui.painter().rect_filled(
                                         egui::Rect::from_min_size(resp.rect.left_top(), egui::vec2(3.0, resp.rect.height())),

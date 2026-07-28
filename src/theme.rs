@@ -164,15 +164,21 @@ impl ThemeManager {
 
         v.widgets.hovered.bg_fill   = t.accent.linear_multiply(0.18);
         v.widgets.hovered.fg_stroke = Stroke::new(1.5, t.accent);
-        v.widgets.hovered.bg_stroke = Stroke::new(1.0, t.accent.linear_multiply(0.5));
+        v.widgets.hovered.bg_stroke = Stroke::new(1.5, t.accent);   // match inactive width — prevents bounce
         v.widgets.hovered.rounding  = Rounding::same(4.0);
-        v.widgets.hovered.expansion = 1.0;
+        v.widgets.hovered.expansion = 0.0;                          // NEVER > 0 — causes layout shift/bounce
 
         v.widgets.active.bg_fill   = t.accent.linear_multiply(0.32);
-        v.widgets.active.fg_stroke = Stroke::new(2.0, t.accent);
+        v.widgets.active.fg_stroke = Stroke::new(1.5, t.accent);
         v.widgets.active.bg_stroke = Stroke::new(1.5, t.accent);
         v.widgets.active.rounding  = Rounding::same(4.0);
-        v.widgets.active.expansion = 1.0;
+        v.widgets.active.expansion = 0.0;                           // NEVER > 0 — causes layout shift/bounce
+
+        v.widgets.open.bg_fill   = t.accent.linear_multiply(0.24);  // ComboBox/dropdown while open
+        v.widgets.open.fg_stroke = Stroke::new(1.5, t.accent);
+        v.widgets.open.bg_stroke = Stroke::new(1.5, t.accent);      // match inactive width — prevents open-state bounce
+        v.widgets.open.rounding  = Rounding::same(4.0);
+        v.widgets.open.expansion = 0.0;
 
         // Checked checkbox fill + slider fill — readable under white text
         v.selection.bg_fill = t.selection_bg;
