@@ -9,7 +9,7 @@ Real-time voice changer for Windows. Built with Rust + egui.
 
 - **27 built-in voice profiles** across 6 categories: Clean Voice, Pitch & Character, Telephone & Radio, Space & Room, Creative, plus Passthrough
 - **17 DSP effects**: noise suppression, pitch shift, compressor, de-esser, reverb, echo, chorus, flanger, distortion, lo-fi, ring mod, robot, and more
-- **5 colour themes**: Coral Storm, Shibui, Kasane (default), Cold Steel, Jizo
+- **6 colour themes**: Coral Storm, Shibui, Kasane, Cold Steel (default), Jizo, Hot Steel
 - **Real-time spectrum analyser** with frequency labels and reflection effect
 - **Dual output routing**: monitor (speakers/headphones) + virtual (VB-CABLE for Teams/Discord/OBS)
 - **Custom profiles**: save, update, and delete your own presets

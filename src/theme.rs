@@ -5,10 +5,11 @@ use serde::{Deserialize, Serialize};
 pub enum ThemeChoice {
     CoralStorm,
     Shibui,
-    #[default]
     Kasane,
+    #[default]
     ColdSteel,
     Jizo,
+    HotSteel,
 }
 
 impl ThemeChoice {
@@ -19,6 +20,7 @@ impl ThemeChoice {
             ThemeChoice::Kasane     => "Kasane",
             ThemeChoice::ColdSteel  => "Cold Steel",
             ThemeChoice::Jizo       => "Jizo",
+            ThemeChoice::HotSteel   => "Hot Steel",
         }
     }
 
@@ -28,6 +30,7 @@ impl ThemeChoice {
         ThemeChoice::Kasane,
         ThemeChoice::ColdSteel,
         ThemeChoice::Jizo,
+        ThemeChoice::HotSteel,
     ];
 }
 
@@ -94,14 +97,14 @@ impl AppTheme {
         Self {
             background:    Color32::from_rgb(0x0a, 0x0b, 0x0d),
             panel:         Color32::from_rgb(0x16, 0x17, 0x1b),
-            accent:        Color32::from_rgb(0xff, 0x3f, 0x8f),
+            accent:        Color32::from_rgb(0x2e, 0x8f, 0xff),
             accent_alt:    Color32::from_rgb(0x7f, 0x97, 0xb3),
             text:          Color32::from_rgb(0xe8, 0xec, 0xf1),
             text_muted:    Color32::from_rgb(0x7f, 0x8f, 0xa6),
             slider_track:  Color32::from_rgb(0x1c, 0x1e, 0x23),
-            selection_bg:  Color32::from_rgb(0xc6, 0x28, 0x39),
+            selection_bg:  Color32::from_rgb(0x2f, 0x6f, 0xd6),
             border:        Color32::from_rgb(0x23, 0x25, 0x29),
-            widget_border: Color32::from_rgb(0xc6, 0x28, 0x39),
+            widget_border: Color32::from_rgb(0x3f, 0x6f, 0x99),
         }
     }
 
@@ -119,6 +122,21 @@ impl AppTheme {
             widget_border: Color32::from_rgb(0x6b, 0x5f, 0x52),
         }
     }
+
+    pub fn hot_steel() -> Self {
+        Self {
+            background:    Color32::from_rgb(0x0d, 0x0a, 0x0b),
+            panel:         Color32::from_rgb(0x1b, 0x15, 0x17),
+            accent:        Color32::from_rgb(0xff, 0x3f, 0x8f),
+            accent_alt:    Color32::from_rgb(0xb3, 0x83, 0x8f),
+            text:          Color32::from_rgb(0xf1, 0xe8, 0xec),
+            text_muted:    Color32::from_rgb(0xa6, 0x80, 0x8a),
+            slider_track:  Color32::from_rgb(0x23, 0x1c, 0x1e),
+            selection_bg:  Color32::from_rgb(0xd6, 0x3f, 0x7f),
+            border:        Color32::from_rgb(0x2b, 0x23, 0x25),
+            widget_border: Color32::from_rgb(0x8f, 0x3f, 0x5f),
+        }
+    }
 }
 
 pub struct ThemeManager {
@@ -127,7 +145,7 @@ pub struct ThemeManager {
 
 impl ThemeManager {
     pub fn new() -> Self {
-        Self { choice: ThemeChoice::Kasane }
+        Self { choice: ThemeChoice::ColdSteel }
     }
 
     pub fn current(&self) -> AppTheme {
@@ -137,6 +155,7 @@ impl ThemeManager {
             ThemeChoice::Kasane     => AppTheme::kasane(),
             ThemeChoice::ColdSteel  => AppTheme::cold_steel(),
             ThemeChoice::Jizo       => AppTheme::jizo(),
+            ThemeChoice::HotSteel   => AppTheme::hot_steel(),
         }
     }
 

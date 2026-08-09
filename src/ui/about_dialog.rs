@@ -144,11 +144,11 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
     ui.add_space(8.0);
 
     // ── Themes ────────────────────────────────────────────────────────────────
-    ui.label(RichText::new("Themes  (5 colour palettes)").strong());
+    ui.label(RichText::new("Themes  (6 colour palettes)").strong());
     ui.add_space(4.0);
 
     let theme_groups: &[(&str, &str)] = &[
-        ("Standard", "Coral Storm · Shibui · Kasane · Cold Steel · Jizo"),
+        ("Standard", "Coral Storm · Shibui · Kasane · Cold Steel · Jizo · Hot Steel"),
     ];
     for &(group, names) in theme_groups {
         ui.horizontal_wrapped(|ui| {
