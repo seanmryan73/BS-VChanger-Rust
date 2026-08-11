@@ -66,6 +66,10 @@ pub struct App {
     // UI state
     show_about:        bool,
     category_expanded: [bool; 4],
+    // Type-to-filter text for each device dropdown — transient, cleared when the popup closes
+    input_filter:      String,
+    monitor_filter:    String,
+    virtual_filter:    String,
 
     // Settings
     auto_start:        bool,
@@ -143,6 +147,9 @@ impl App {
             input_gain:        Arc::new(AtomicU32::new(saved.input_gain.to_bits())),
             show_about:        false,
             category_expanded: saved.category_expanded,
+            input_filter:      String::new(),
+            monitor_filter:    String::new(),
+            virtual_filter:    String::new(),
             auto_start:        saved.auto_start,
             pending_auto_start,
             settings_dirty:    false,
@@ -628,6 +635,56 @@ fn show_profile_panel(app: &mut App, ctx: &Context) {
 
 // ── Right panel: Devices + Transport ─────────────────────────────────────────
 
+/// Device dropdown with a type-to-filter box pinned at the top of the popup.
+///
+/// `filter` is transient UI state: it is cleared once the popup closes so a stale
+/// needle can't hide every device the next time the dropdown is opened. Matching is
+/// case-insensitive substring, which is what makes "cable" find "CABLE Input
+/// (VB-Audio Virtual Cable)" without the user typing the vendor suffix.
+#[allow(clippy::too_many_arguments)]
+fn device_combo(
+    ui: &mut Ui,
+    id: &str,
+    selected: &mut String,
+    devices: &[String],
+    filter: &mut String,
+    width: f32,
+    placeholder: &str,
+    theme: &crate::theme::AppTheme,
+) {
+    let label = if selected.is_empty() { placeholder } else { selected.as_str() };
+
+    let popup = egui::ComboBox::from_id_salt(id)
+        .selected_text(label)
+        .width(width)
+        .show_ui(ui, |ui| {
+            ui.add(
+                egui::TextEdit::singleline(filter)
+                    .desired_width(width - 16.0)
+                    .hint_text("search…"),
+            );
+            ui.add_space(2.0);
+
+            let needle = filter.trim().to_lowercase();
+            let mut shown = 0usize;
+            for name in devices {
+                if !needle.is_empty() && !name.to_lowercase().contains(&needle) {
+                    continue;
+                }
+                shown += 1;
+                ui.selectable_value(selected, name.clone(), name);
+            }
+            if shown == 0 {
+                ui.label(RichText::new("no matching device").color(theme.text_muted).small());
+            }
+        });
+
+    // `inner` is None on frames where the popup is closed.
+    if popup.inner.is_none() && !filter.is_empty() {
+        filter.clear();
+    }
+}
+
 fn show_device_panel(app: &mut App, ctx: &Context) {
     let theme   = app.theme.current();
     let running = app.engine.is_some();
@@ -661,14 +718,16 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
 
             // Input
             ui.label(RichText::new("INPUT").color(theme.text_muted).small().strong());
-            egui::ComboBox::from_id_salt("input_dev")
-                .selected_text(&app.selected_input)
-                .width(210.0)
-                .show_ui(ui, |ui| {
-                    for name in app.input_devices.clone() {
-                        ui.selectable_value(&mut app.selected_input, name.clone(), &name);
-                    }
-                });
+            device_combo(
+                ui,
+                "input_dev",
+                &mut app.selected_input,
+                &app.input_devices,
+                &mut app.input_filter,
+                210.0,
+                "— select —",
+                &theme,
+            );
 
             ui.add_space(6.0);
 
@@ -677,14 +736,16 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
             ui.horizontal(|ui| {
                 ui.checkbox(&mut app.monitor_enabled, "");
                 ui.add_enabled_ui(app.monitor_enabled, |ui| {
-                    egui::ComboBox::from_id_salt("monitor_dev")
-                        .selected_text(&app.selected_monitor)
-                        .width(185.0)
-                        .show_ui(ui, |ui| {
-                            for name in app.output_devices.clone() {
-                                ui.selectable_value(&mut app.selected_monitor, name.clone(), &name);
-                            }
-                        });
+                    device_combo(
+                        ui,
+                        "monitor_dev",
+                        &mut app.selected_monitor,
+                        &app.output_devices,
+                        &mut app.monitor_filter,
+                        185.0,
+                        "— select —",
+                        &theme,
+                    );
                 });
             });
 
@@ -695,14 +756,16 @@ fn show_device_panel(app: &mut App, ctx: &Context) {
             ui.horizontal(|ui| {
                 ui.checkbox(&mut app.virtual_enabled, "");
                 ui.add_enabled_ui(app.virtual_enabled, |ui| {
-                    egui::ComboBox::from_id_salt("virtual_dev")
-                        .selected_text(if app.selected_virtual.is_empty() { "— select —" } else { &app.selected_virtual })
-                        .width(185.0)
-                        .show_ui(ui, |ui| {
-                            for name in app.output_devices.clone() {
-                                ui.selectable_value(&mut app.selected_virtual, name.clone(), &name);
-                            }
-                        });
+                    device_combo(
+                        ui,
+                        "virtual_dev",
+                        &mut app.selected_virtual,
+                        &app.output_devices,
+                        &mut app.virtual_filter,
+                        185.0,
+                        "— select —",
+                        &theme,
+                    );
                 });
             });
 
