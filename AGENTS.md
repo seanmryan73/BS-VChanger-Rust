@@ -20,7 +20,7 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI (`cpal`), pro
 |-------|---------------|-----|
 | egui / eframe | `0.29` | Intentionally pinned; upgrade all egui-family crates together or not at all |
 | cpal | `0.15` | WASAPI audio I/O; pinned for stability |
-| nnnoiseless | `0.5` | RNNoise C binding; requires MSVC build tools installed |
+| nnnoiseless | `0.5` | RNNoise, **pure Rust** — a port, not a binding. `default-features = false` (see below) |
 
 ## Critical constraints
 
@@ -29,7 +29,16 @@ Real-time voice changer for Windows. Captures mic audio via WASAPI (`cpal`), pro
 - **RNNoise @ 48 kHz only** — `nnnoiseless` requires exactly 48 kHz; the effect is bypassed at other sample rates. Do not break this guard.
 - **6-theme custom enum** — based on the `Rust-Desktop-Standards.md` theme standard; do not replace with egui's ThemeManager. Themes: CoralStorm, Shibui, Kasane, ColdSteel (default), Jizo, HotSteel.
 - **No unsafe code** — `#![deny(unsafe_code)]` in `main.rs`.
-- **`nnnoiseless` requires MSVC** — C compiler required; `cargo build` fails without Visual Studio Build Tools.
+- **`nnnoiseless` is pure Rust, not a C binding.** This file claimed the opposite until 2026-08-13,
+  and the claim had propagated from `Rust-Desktop-Standards.md`'s C-exceptions table. Verified with
+  `cargo tree -p nnnoiseless -e normal,build`: the deps are `anyhow`, `clap` and `dasp` — no `cc`, no
+  `bindgen`, no C build script. MSVC is needed to link **any** Rust on Windows, not because of this
+  crate. As written it would send someone installing Visual Studio Build Tools to fix an unrelated
+  build failure.
+- **`nnnoiseless` carries `default-features = false`.** Its default `bin` feature drags in
+  **clap 3.2.25 → atty 0.2.14**, an EOL CLI stack with a known advisory, into a GUI app that never
+  parses an argument. Without the flag the tree is `anyhow` + `clap` + `dasp`; with it, just
+  `easyfft` + `once_cell`.
 - **VB-CABLE is a runtime requirement** — virtual output routing requires VB-CABLE installed. App still runs in monitor-only mode without it.
 
 ## Working rules

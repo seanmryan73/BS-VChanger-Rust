@@ -281,7 +281,14 @@ struct OutputResampler {
 
 impl OutputResampler {
     fn new(input_rate: u32, output_rate: u32) -> Self {
-        Self { ratio: input_rate as f64 / output_rate as f64, phase: 0.0, prev: 0.0, next: 0.0 }
+        // `.max(1)` is not cosmetic. A device reporting a zero output rate makes
+        // this ratio `inf`, and `next_sample`'s `while self.phase >= 1.0` loop
+        // then never terminates — `inf - 1.0` is still `inf`. That is a **hang
+        // inside the cpal callback**, so the symptom is the whole audio device
+        // wedging rather than a wrong sample. Reachable the same way the format
+        // guards are: from an endpoint that misreports itself.
+        // Back-ported from BS-VChanger-and-ChatBot, `DIVERGENCES.md` #29.
+        Self { ratio: input_rate as f64 / output_rate.max(1) as f64, phase: 0.0, prev: 0.0, next: 0.0 }
     }
 
     fn next_sample(&mut self, cons: &mut impl Consumer<Item = f32>) -> f32 {
