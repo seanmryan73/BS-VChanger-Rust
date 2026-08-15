@@ -1043,25 +1043,6 @@ fn effect_summary(t: EffectType, params: &HashMap<String, f64>) -> String {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Every built-in profile after Passthrough must fall in exactly one UI
-    /// group, with no gaps — otherwise profiles silently vanish from the list.
-    #[test]
-    fn profile_groups_cover_all_built_ins() {
-        let count = built_in::all().len();
-        let mut expected_start = 1; // index 0 is Passthrough, rendered separately
-        for &(name, start, end) in PROFILE_GROUPS {
-            assert_eq!(start, expected_start, "group '{name}' leaves a gap or overlaps");
-            assert!(end > start, "group '{name}' is empty");
-            expected_start = end;
-        }
-        assert_eq!(expected_start, count, "groups must end exactly at the built-in count");
-    }
-}
-
 fn effect_params_ui(ui: &mut Ui, t: EffectType, params: &mut HashMap<String, f64>) -> bool {
     let mut changed = false;
 
@@ -1149,4 +1130,25 @@ fn effect_params_ui(ui: &mut Ui, t: EffectType, params: &mut HashMap<String, f64
     }
 
     changed
+}
+
+// Moved here from mid-file so that `clippy::items_after_test_module` passes and
+// the whole repo can be gated at `-D warnings`. Pure relocation, no test changed.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every built-in profile after Passthrough must fall in exactly one UI
+    /// group, with no gaps — otherwise profiles silently vanish from the list.
+    #[test]
+    fn profile_groups_cover_all_built_ins() {
+        let count = built_in::all().len();
+        let mut expected_start = 1; // index 0 is Passthrough, rendered separately
+        for &(name, start, end) in PROFILE_GROUPS {
+            assert_eq!(start, expected_start, "group '{name}' leaves a gap or overlaps");
+            assert!(end > start, "group '{name}' is empty");
+            expected_start = end;
+        }
+        assert_eq!(expected_start, count, "groups must end exactly at the built-in count");
+    }
 }
