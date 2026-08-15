@@ -1,6 +1,28 @@
 use eframe::egui::{self, Color32, Context, RichText, ScrollArea, Ui};
 
-const VERSION: &str = "2026.06.20";
+/// The displayed version, derived from `Cargo.toml` — never a second copy.
+///
+/// This was `const VERSION: &str = "2026.06.20"` while the manifest moved on
+/// without it, drifting two months. That is the whole argument against typing a
+/// version anywhere by hand: nothing compiles the mismatch, so it can only be
+/// caught by someone happening to look at the About box.
+///
+/// `Cargo.toml` cannot carry leading zeros (semver forbids them), so the
+/// manifest says `2026.8.15` while the house convention displays `2026.08.15`.
+/// This pads it back rather than storing the padded form a second time.
+fn display_version() -> String {
+    let mut out = String::with_capacity(10);
+    for (i, part) in env!("CARGO_PKG_VERSION").split('.').enumerate() {
+        if i > 0 {
+            out.push('.');
+            if part.len() == 1 {
+                out.push('0');
+            }
+        }
+        out.push_str(part);
+    }
+    out
+}
 
 pub fn show(ctx: &Context, open: &mut bool, on_reset: &mut bool) {
     if !*open {
@@ -31,12 +53,18 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
         ui.label(RichText::new("BS").size(28.0).strong().color(accent));
         ui.label(RichText::new("› VCHANGER").size(13.0).color(muted));
         ui.add_space(4.0);
-        ui.label(RichText::new(format!("v{VERSION}  •  Real-time voice changer for Windows"))
+        ui.label(RichText::new(format!("v{}  •  Real-time voice changer for Windows", display_version()))
             .color(muted).small());
         ui.add_space(2.0);
+        // Derived, never typed. This line claimed "18 themes" when there have
+        // only ever been 6 — a count nobody re-reads once it is written.
         ui.label(
-            RichText::new("27 profiles  •  18 themes  •  17 effects  •  single EXE")
-                .color(dim).small(),
+            RichText::new(format!(
+                "{} profiles  •  {} themes  •  17 effects  •  single EXE",
+                crate::profiles::built_in::all().len(),
+                crate::theme::ThemeChoice::ALL.len(),
+            ))
+            .color(dim).small(),
         );
     });
 
@@ -361,4 +389,42 @@ fn draw_content(ui: &mut Ui, open: &mut bool, on_reset: &mut bool) {
             .color(dim).small());
     });
     ui.add_space(4.0);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The regression this repo actually shipped: a hand-typed `const VERSION`
+    /// that sat two months behind `Cargo.toml`. Nothing compiles a mismatch
+    /// between a string literal and the manifest, so only a test can hold it.
+    #[test]
+    fn the_displayed_version_tracks_cargo_toml() {
+        let cargo = env!("CARGO_PKG_VERSION");
+        let shown = display_version();
+        assert_eq!(
+            shown.replace(".0", "."),
+            cargo.replace(".0", "."),
+            "About shows {shown}, Cargo.toml says {cargo}"
+        );
+    }
+
+    /// Cargo forbids leading zeros; the house display convention wants them.
+    #[test]
+    fn single_digit_parts_are_padded_for_display() {
+        // Whatever the manifest says, every part after the year reads as two
+        // digits — that is the form the vault notes and About screens use.
+        for part in display_version().split('.').skip(1) {
+            assert_eq!(part.len(), 2, "part {part} of {} is not padded", display_version());
+        }
+    }
+
+    /// The other half of the same defect: "18 themes" was displayed for a set
+    /// that has only ever had 6. Counts are derived now, so this pins that they
+    /// stay derived rather than pinning a number.
+    #[test]
+    fn the_advertised_counts_match_reality() {
+        assert_eq!(crate::theme::ThemeChoice::ALL.len(), 6);
+        assert!(crate::profiles::built_in::all().len() >= 20);
+    }
 }

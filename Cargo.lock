@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "bs-vchanger"
-version = "2026.7.27"
+version = "2026.8.15"
 dependencies = [
  "cpal",
  "eframe",
