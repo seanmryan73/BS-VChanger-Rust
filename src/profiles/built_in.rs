@@ -154,6 +154,11 @@ fn build() -> Vec<VoiceProfile> {
         // ── Creative / entertainment ──────────────────────────────────────────
         VoiceProfile::built_in("Robot", vec![
             fx(Robot,            true,  &[("pitch_hz",120.0)]),
+            // 80 Hz is *voicing*, not correctness — it thins the tone, and the
+            // preset was voiced by ear against it. The effect's own internal
+            // 20 Hz blocker only removes the rectifier's DC offset, so the two
+            // are not redundant.
+            fx(CleanMic,         true,  &[("cutoff_hz",80.0)]),
             fx(Compressor,       true,  &[("threshold",0.5),("ratio",4.0),("attack",0.005),("release",0.1)]),
         ]),
         VoiceProfile::built_in("Alien", vec![
