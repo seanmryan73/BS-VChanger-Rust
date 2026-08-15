@@ -21,6 +21,13 @@ pub struct PitchResampleEffect {
     // Track what the resampler was built for so we can rebuild on change.
     built_semitones:  f32,
     built_rate:       u32,
+    // Reusable input block, replacing a `drain(..).collect::<Vec<f32>>()` that
+    // allocated once per chunk — inside the audio callback.
+    chunk:            Vec<f32>,
+    // Reusable output block for `process_into_buffer`. Sized from
+    // `output_frames_max()` when the resampler is built, so it never grows in
+    // the callback.
+    out_scratch:      Vec<f32>,
 }
 
 impl PitchResampleEffect {
@@ -33,6 +40,8 @@ impl PitchResampleEffect {
             last_out:        0.0,
             built_semitones: f32::NAN,
             built_rate:      0,
+            chunk:           vec![0.0; CHUNK_SIZE],
+            out_scratch:     Vec::new(),
         }
     }
 
@@ -72,6 +81,13 @@ impl PitchResampleEffect {
         )
         .ok();
 
+        // Size the output scratch once, here, from what rubato says it can emit.
+        // Doing it in `process` would allocate in the callback, which is the
+        // whole defect being removed.
+        if let Some(rs) = &self.resampler {
+            self.out_scratch = vec![0.0; rs.output_frames_max()];
+        }
+
         self.built_semitones = self.semitones;
         self.built_rate      = sample_rate;
         self.in_buf.clear();
@@ -94,9 +110,14 @@ impl AudioEffect for PitchResampleEffect {
         self.in_buf.extend_from_slice(samples);
 
         while self.in_buf.len() >= CHUNK_SIZE {
-            let chunk: Vec<f32> = self.in_buf.drain(..CHUNK_SIZE).collect();
-            if let Ok(out_frames) = resampler.process(&[chunk], None) {
-                self.out_buf.extend(out_frames[0].iter().copied());
+            self.chunk.copy_from_slice(&self.in_buf[..CHUNK_SIZE]);
+            self.in_buf.drain(..CHUNK_SIZE);
+
+            // `process_into_buffer` rather than `process`: the latter allocates a
+            // fresh Vec<Vec<f32>> per chunk, in the realtime callback.
+            match resampler.process_into_buffer(&[&self.chunk], &mut [&mut self.out_scratch], None) {
+                Ok((_, written)) => self.out_buf.extend(self.out_scratch[..written].iter().copied()),
+                Err(_) => break,
             }
         }
 

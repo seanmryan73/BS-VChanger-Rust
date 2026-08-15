@@ -10,6 +10,11 @@ use crate::audio::spectrum::SpectrumBuffer;
 use super::devices;
 
 const RING_BUF_SAMPLES: usize = 16_384;
+/// Preallocation for the callback scratch buffers, so the realtime path never
+/// asks the allocator. Same value `BS-VChanger-and-ChatBot`'s `format` module
+/// settled on — comfortably above any period a WASAPI endpoint asks for, and
+/// 64 KB, so the headroom costs nothing.
+const SCRATCH_SAMPLES:  usize = 16_384;
 const PREFERRED_RATES:   &[u32] = &[48_000, 44_100, 16_000, 22_050, 96_000];
 const PREFERRED_FORMATS: &[SampleFormat] = &[SampleFormat::F32, SampleFormat::I16, SampleFormat::U16];
 
@@ -67,14 +72,24 @@ impl RealtimeAudioEngine {
                 let spec  = spectrum.clone();
                 let level = input_level.clone();
                 let gain  = Arc::clone(&input_gain);
+                // Preallocated once, reused for the life of the stream. This
+                // `collect()` was the allocation this app is best known for: a
+                // fresh Vec on every input callback, ~100 times a second, in the
+                // highest-priority thread in the process. `malloc` can block on
+                // the allocator's lock, which is exactly what the `try_lock`
+                // below exists to avoid — so the two were working against each
+                // other in the same function.
+                let mut mono: Vec<f32> = Vec::with_capacity(SCRATCH_SAMPLES);
                 move |data: &[$ty], _: &cpal::InputCallbackInfo| {
-                    let mut mono: Vec<f32> = if in_channels == 1 {
-                        data.iter().map($to_f32).collect()
+                    mono.clear();
+                    if in_channels == 1 {
+                        mono.extend(data.iter().map($to_f32));
                     } else {
-                        data.chunks(in_channels)
-                            .map(|ch| ch.iter().map($to_f32).sum::<f32>() / in_channels as f32)
-                            .collect()
-                    };
+                        mono.extend(
+                            data.chunks(in_channels)
+                                .map(|ch| ch.iter().map($to_f32).sum::<f32>() / in_channels as f32),
+                        );
+                    }
                     let g = f32::from_bits(gain.load(Ordering::Relaxed));
                     if g != 1.0 { for s in &mut mono { *s *= g; } }
                     level.push(&mono);
@@ -354,16 +369,30 @@ fn build_output_stream(
     } else {
         // Rates match — direct fill, no resampling overhead.
         match fmt {
+            // One scratch per stream, moved into the closure, so the callback
+            // reuses it forever instead of allocating on every period.
             SampleFormat::F32 => dev.build_output_stream(
-                &cfg, move |data: &mut [f32], _| { fill_f32(data, channels, &mut cons); },
+                &cfg,
+                {
+                    let mut scratch: Vec<f32> = Vec::new();
+                    move |data: &mut [f32], _| { fill_f32(data, channels, &mut cons, &mut scratch); }
+                },
                 make_err_cb(err), None,
             ),
             SampleFormat::I16 => dev.build_output_stream(
-                &cfg, move |data: &mut [i16], _| { fill_i16(data, channels, &mut cons); },
+                &cfg,
+                {
+                    let mut scratch: Vec<f32> = Vec::new();
+                    move |data: &mut [i16], _| { fill_i16(data, channels, &mut cons, &mut scratch); }
+                },
                 make_err_cb(err), None,
             ),
             SampleFormat::U16 => dev.build_output_stream(
-                &cfg, move |data: &mut [u16], _| { fill_u16(data, channels, &mut cons); },
+                &cfg,
+                {
+                    let mut scratch: Vec<f32> = Vec::new();
+                    move |data: &mut [u16], _| { fill_u16(data, channels, &mut cons, &mut scratch); }
+                },
                 make_err_cb(err), None,
             ),
             fmt => return Err(format!("Output '{device_name}': unsupported format {fmt:?}")),
@@ -383,33 +412,46 @@ fn make_err_cb(
     move |e| { *last_error.lock() = Some(e.to_string()); }
 }
 
-fn fill_f32(data: &mut [f32], ch: usize, cons: &mut impl Consumer<Item = f32>) {
+// `scratch` is owned by the calling output stream and reused for its whole life.
+// All three of these used to do `vec![0.0f32; frames]` per callback, so a session
+// with both a monitor and a virtual output was doing **three** heap allocations
+// per audio period, ~100 times a second, in the highest-priority thread in the
+// process. The input-callback allocation is the one that always gets quoted; this
+// is the half that gets missed.
+//
+// `clear` + `resize` reuses the existing capacity after the first call — it
+// memsets, but it never asks the allocator.
+
+fn fill_f32(data: &mut [f32], ch: usize, cons: &mut impl Consumer<Item = f32>, scratch: &mut Vec<f32>) {
     let frames = data.len() / ch;
-    let mut mono = vec![0.0f32; frames];
-    let n = cons.pop_slice(&mut mono);
+    scratch.clear();
+    scratch.resize(frames, 0.0);
+    let n = cons.pop_slice(scratch);
     for i in 0..frames {
-        let s = if i < n { mono[i] } else { 0.0 };
+        let s = if i < n { scratch[i] } else { 0.0 };
         for c in 0..ch { data[i * ch + c] = s; }
     }
 }
 
-fn fill_i16(data: &mut [i16], ch: usize, cons: &mut impl Consumer<Item = f32>) {
+fn fill_i16(data: &mut [i16], ch: usize, cons: &mut impl Consumer<Item = f32>, scratch: &mut Vec<f32>) {
     let frames = data.len() / ch;
-    let mut mono = vec![0.0f32; frames];
-    let n = cons.pop_slice(&mut mono);
+    scratch.clear();
+    scratch.resize(frames, 0.0);
+    let n = cons.pop_slice(scratch);
     for i in 0..frames {
-        let s = if i < n { mono[i] } else { 0.0 };
+        let s = if i < n { scratch[i] } else { 0.0 };
         let v = (s * 32_767.0).clamp(-32_768.0, 32_767.0) as i16;
         for c in 0..ch { data[i * ch + c] = v; }
     }
 }
 
-fn fill_u16(data: &mut [u16], ch: usize, cons: &mut impl Consumer<Item = f32>) {
+fn fill_u16(data: &mut [u16], ch: usize, cons: &mut impl Consumer<Item = f32>, scratch: &mut Vec<f32>) {
     let frames = data.len() / ch;
-    let mut mono = vec![0.0f32; frames];
-    let n = cons.pop_slice(&mut mono);
+    scratch.clear();
+    scratch.resize(frames, 0.0);
+    let n = cons.pop_slice(scratch);
     for i in 0..frames {
-        let s = if i < n { mono[i] } else { 0.0 };
+        let s = if i < n { scratch[i] } else { 0.0 };
         let v = ((s + 1.0) * 32_767.5).clamp(0.0, 65_535.0) as u16;
         for c in 0..ch { data[i * ch + c] = v; }
     }
@@ -496,7 +538,8 @@ mod tests {
         prod.push_slice(&[0.1, 0.2, 0.3, 0.4]);
 
         let mut out = vec![0.0f32; 8]; // 4 frames × 2 channels
-        fill_f32(&mut out, 2, &mut cons);
+        let mut scratch = Vec::new();
+        fill_f32(&mut out, 2, &mut cons, &mut scratch);
 
         // Each mono sample must appear on both L and R channels
         assert_eq!(out, vec![0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4],
@@ -507,7 +550,8 @@ mod tests {
     fn fill_f32_empty_buffer_outputs_silence() {
         let (_prod, mut cons) = HeapRb::<f32>::new(64).split();
         let mut out = vec![1.0f32; 8]; // pre-filled with non-zero
-        fill_f32(&mut out, 2, &mut cons);
+        let mut scratch = Vec::new();
+        fill_f32(&mut out, 2, &mut cons, &mut scratch);
         assert!(out.iter().all(|&s| s == 0.0), "empty ring buffer must produce silence, not garbage");
     }
 
