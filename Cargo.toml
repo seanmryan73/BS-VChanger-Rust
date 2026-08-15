@@ -8,7 +8,7 @@ license = "MIT"
 eframe    = "0.29"
 egui      = "0.29"
 cpal      = "0.15"
-ringbuf   = "0.4"
+ringbuf   = "0.5"
 rubato    = "0.15"
 # `default-features = false` drops the `bin` feature, which pulls clap 3.2.25 and
 # atty 0.2.14 — an EOL CLI stack with a known advisory — into a GUI app that
