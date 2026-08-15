@@ -334,7 +334,12 @@ impl eframe::App for App {
         show_effect_panel(self, ctx);
 
         if self.settings_dirty {
-            settings::save(&self.current_settings());
+            // Surfaced, not discarded. A save that fails every time otherwise
+            // shows up only as settings reverting on the next launch, which
+            // reads as "the app forgot" rather than "the app could not write".
+            if let Err(e) = settings::save(&self.current_settings()) {
+                self.last_error = Some(format!("Settings not saved — {e}"));
+            }
             self.settings_dirty = false;
         }
         if self.engine.is_some() {
@@ -343,7 +348,10 @@ impl eframe::App for App {
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
-        settings::save(&self.current_settings());
+        // Nothing can be shown from here — the window is going away — but the
+        // atomic write still guarantees the on-disk file is either the old
+        // settings or the new ones, never a truncated mix of both.
+        let _ = settings::save(&self.current_settings());
     }
 }
 

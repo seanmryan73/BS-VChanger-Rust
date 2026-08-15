@@ -1,7 +1,25 @@
+use std::sync::OnceLock;
+
 use super::{EffectType::*, VoiceProfile};
 use super::factory::fx;
 
+/// The built-in presets, with **stable ids for the life of the process**.
+///
+/// `VoiceProfile::built_in` mints a `Uuid::new_v4()` per profile, so before the
+/// `OnceLock` two calls to `all()` returned presets carrying different ids — the
+/// same preset comparing unequal to itself. Not a live bug today, because this
+/// app calls `all()` once at startup and identity is by name everywhere, but it
+/// is a loaded gun for any future `selected(a == b)` in the picker, where the
+/// symptom is "the highlight never appears" and the cause is nowhere near it.
+///
+/// If ids ever need to survive a restart the answer is
+/// `Uuid::new_v5(&NAMESPACE_OID, name)`, not a return to `v4`.
 pub fn all() -> Vec<VoiceProfile> {
+    static TABLE: OnceLock<Vec<VoiceProfile>> = OnceLock::new();
+    TABLE.get_or_init(build).clone()
+}
+
+fn build() -> Vec<VoiceProfile> {
     vec![
         // ── Passthrough ───────────────────────────────────────────────────────
         VoiceProfile::built_in("Passthrough", vec![]),
