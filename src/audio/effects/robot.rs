@@ -27,7 +27,10 @@ pub struct RobotModulationEffect {
 
 impl RobotModulationEffect {
     pub fn new(pitch_hz: f32) -> Self {
-        Self { pitch_hz, buffer: Vec::new(), write_pos: 0, x_prev: 0.0, y_prev: 0.0 }
+        // `.max(1.0)`: a pitch of 0 makes `rate / pitch_hz` infinite, which
+        // saturates to usize::MAX on the cast, wraps to 0 on the `+ 1`, and then
+        // panics on the modulo in `process`. Reachable from a saved profile.
+        Self { pitch_hz: pitch_hz.max(1.0), buffer: Vec::new(), write_pos: 0, x_prev: 0.0, y_prev: 0.0 }
     }
 
     fn init_buffer(&mut self, sample_rate: u32) {

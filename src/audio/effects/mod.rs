@@ -136,6 +136,9 @@ mod suite {
             Box::new(EchoEffect::new(0.0, 0.4, 0.4)),
             // A delay longer than the buffer underflowed write_pos + len - delay.
             Box::new(ChorusEffect::new(1.5, 10.0, 0.5)),
+            // pitch 0 -> rate/0 = inf -> saturates to usize::MAX -> wraps to 0
+            // on the +1 -> `% 0` panic.
+            Box::new(RobotModulationEffect::new(0.0)),
         ];
 
         for fx in fx.iter_mut() {
