@@ -10,7 +10,9 @@ pub struct CompressorEffect {
 
 impl CompressorEffect {
     pub fn new(threshold: f32, ratio: f32, attack: f32, release: f32) -> Self {
-        Self { threshold, ratio, attack, release, envelope: 0.0 }
+        // A ratio of zero divides by zero in the gain computation. 1.0 is the
+        // identity — no compression — which is the sane reading of "no ratio".
+        Self { threshold, ratio: if ratio > 0.0 { ratio } else { 1.0 }, attack, release, envelope: 0.0 }
     }
 }
 

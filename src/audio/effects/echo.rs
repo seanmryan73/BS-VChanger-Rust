@@ -14,7 +14,9 @@ impl EchoEffect {
     }
 
     fn init_buffer(&mut self, sample_rate: u32) {
-        let len = (self.delay_secs * sample_rate as f32) as usize + 1;
+        // `.max(1)`: a zero-length buffer makes the `% len` in `process` a
+        // divide-by-zero panic, inside the audio callback.
+        let len = ((self.delay_secs * sample_rate as f32) as usize + 1).max(1);
         if self.buffer.len() != len {
             self.buffer = vec![0.0; len];
             self.write_pos = 0;

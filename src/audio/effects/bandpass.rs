@@ -8,7 +8,11 @@ pub struct BandpassFilterEffect {
 
 impl BandpassFilterEffect {
     pub fn new(center_freq: f32, q: f32) -> Self {
-        Self { center_freq, q, x1: 0.0, x2: 0.0, y1: 0.0, y2: 0.0 }
+        // A q of zero makes `alpha` divide by zero, which puts NaN through the
+        // whole stream, not just this effect. 0.707 is Butterworth — the sane
+        // reading of "no q given". Reachable from a user-authored profile, which
+        // is why it is guarded here rather than at the call site.
+        Self { center_freq, q: if q > 0.0 { q } else { 0.707 }, x1: 0.0, x2: 0.0, y1: 0.0, y2: 0.0 }
     }
 
     fn compute_coeffs(&self, sample_rate: u32) -> (f32, f32, f32, f32, f32) {

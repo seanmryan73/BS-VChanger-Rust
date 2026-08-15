@@ -115,6 +115,42 @@ mod suite {
         }
     }
 
+    /// Degenerate parameters, all reachable from a user-authored profile.
+    ///
+    /// Each of these panicked or produced NaN before the guards went in. They are
+    /// asserted here rather than in each effect's own module because the property
+    /// is the same one in every case: **a bad number in a saved profile must not
+    /// be able to take down the audio callback.**
+    #[test]
+    fn degenerate_parameters_are_guarded() {
+        let mut fx: Vec<Box<dyn AudioEffect>> = vec![
+            // q = 0 divided by zero and put NaN through the whole stream.
+            Box::new(BandpassFilterEffect::new(1_000.0, 0.0)),
+            // ratio = 0 divided by zero in the gain computation.
+            Box::new(CompressorEffect::new(0.5, 0.0, 0.005, 0.1)),
+            // 2^128 overflows f32 to inf; every sample then NaN.
+            Box::new(LoFiEffect::new(128.0, 1)),
+            // downsample_rate = 0 quantised every sample away.
+            Box::new(LoFiEffect::new(8.0, 0)),
+            // A zero-length delay buffer is a `% 0` panic.
+            Box::new(EchoEffect::new(0.0, 0.4, 0.4)),
+            // A delay longer than the buffer underflowed write_pos + len - delay.
+            Box::new(ChorusEffect::new(1.5, 10.0, 0.5)),
+        ];
+
+        for fx in fx.iter_mut() {
+            for rate in RATES {
+                let mut s: Vec<f32> = (0..1_024).map(|i| (i as f32 * 0.05).sin() * 0.5).collect();
+                fx.process(&mut s, *rate);
+                assert!(
+                    s.iter().all(|v| v.is_finite()),
+                    "{} produced a non-finite sample at {rate} Hz with a degenerate parameter",
+                    fx.name()
+                );
+            }
+        }
+    }
+
     #[test]
     fn reset_returns_every_effect_to_silence() {
         // Audio leaking across a reset is audible as the tail of the *previous*

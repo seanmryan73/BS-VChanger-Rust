@@ -9,7 +9,15 @@ pub struct LoFiEffect {
 
 impl LoFiEffect {
     pub fn new(bit_depth: f32, downsample_rate: u32) -> Self {
-        Self { bit_depth, downsample_rate, counter: 0, held: 0.0 }
+        // `2^bit_depth` overflows f32 to inf past ~128, and every sample then
+        // becomes NaN. `downsample_rate` of 0 quantises every sample — a silent
+        // no-op that says nothing about why the effect did nothing.
+        Self {
+            bit_depth:       bit_depth.clamp(1.0, 24.0),
+            downsample_rate: downsample_rate.max(1),
+            counter:         0,
+            held:            0.0,
+        }
     }
 }
 

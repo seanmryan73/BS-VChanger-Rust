@@ -31,7 +31,10 @@ impl AudioEffect for ChorusEffect {
             self.buffer[self.write_pos] = *s;
             let delay_samples = (self.depth * sample_rate as f32
                 * (1.0 + (self.lfo_phase * 2.0 * std::f32::consts::PI).sin()) / 2.0) as usize;
-            let read_pos = (self.write_pos + len - delay_samples) % len;
+            // Clamped: a delay longer than the buffer underflows
+            // `write_pos + len - delay` and panics. Flanger and vibrato already
+            // clamped; chorus did not.
+            let read_pos = (self.write_pos + len - delay_samples.min(len - 1)) % len;
             let delayed = self.buffer[read_pos];
             self.write_pos = (self.write_pos + 1) % len;
             self.lfo_phase = (self.lfo_phase + lfo_inc).fract();
