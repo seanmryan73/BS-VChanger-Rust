@@ -59,11 +59,4 @@ Until 2026-09-19 these standards were `@`-loaded in full at every session start.
 
 ## After this session
 
-When the session ends or the user says to wrap up, update the project context note:
-`c:\_repos\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md`
-
-Update these sections:
-- **Current constraints** — add any new version pins, banned patterns, or architecture rules discovered
-- **Fix history** — add bugs fixed with root cause (one line each: date · symptom · cause · fix)
-- **Next actions** — replace with the current list
-- **frontmatter `version:`** — set to today's date (YYYY.MM.DD)
+Run **`/wrapup`** (`c:\_repos\Obsidian\Notes\Claude\Skills\wrapup\SKILL.md`). It is the procedure; this section only adds to it. This repo's project note: `Projects/BS-VChanger-Rust Claude Context.md`.
