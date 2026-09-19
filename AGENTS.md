@@ -2,17 +2,27 @@
 
 Real-time voice changer for Windows. Captures mic audio via WASAPI (`cpal`), processes it through a configurable chain of 17 DSP effects, and routes output to monitor and/or virtual (VB-CABLE) destinations. Primary use case: clean voice and noise reduction. Ships as a single ~5 MB standalone EXE, no installer.
 
-> **Agent context — required reading.** Lines beginning with `@` below are absolute file paths (one complete path per line; paths may contain spaces). Claude Code auto-imports them. All other agents (Codex, Copilot, etc.): read every `@` file now, before doing any work.
+> **Agent context.** Lines beginning with `@` are absolute file paths (one per line; paths may
+> contain spaces). Claude Code loads them automatically. All other agents (Codex, Copilot, etc.): read
+> every `@` file now, before doing any work. The *Read before you…* table is **not** loaded up front:
+> open the named note when your task matches the row, before you change anything in that area.
 
-## Shared reference notes
+## Always loaded
 
 @c:\_repos\Obsidian\Notes\Claude\Reference\Author-Version-Standards.md
-@c:\_repos\Obsidian\Notes\Claude\Reference\Rust-Desktop-Standards.md
-@c:\_repos\Obsidian\Notes\Claude\Reference\Windows-Platform-Gotchas.md
-
-## Project context
-
+@c:\_repos\Obsidian\Notes\Claude\Reference\Core-Rules.md
 @c:\_repos\Obsidian\Notes\Claude\Projects\BS-VChanger-Rust Claude Context.md
+
+## Read before you…
+
+| Before you… | Read (path under `c:\_repos\Obsidian\Notes\Claude\`) |
+|---|---|
+| change UI, layout, themes, settings persistence or app architecture | `Reference/Rust-Desktop-Standards.md` (the matching section) |
+| call a Windows API, touch audio, capture or displays, or spawn a process | `Reference/Windows-Platform-Gotchas.md` (the matching section) |
+| recommend an architecture, a dependency or a pattern | search `Reference/Cross-Project-Anti-Patterns.md` |
+
+Until 2026-09-19 these standards were `@`-loaded in full at every session start. See
+`Reference/Multi-Tool-AI-Setup.md` rule 6 for the two-tier loading and its budget.
 
 ## Pinned dependency versions — do not change without a concrete reason
 
