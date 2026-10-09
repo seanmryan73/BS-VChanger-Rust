@@ -10,3 +10,8 @@ jobs:
         run: cargo build
       - name: Clippy
         run: cargo clippy
+      - uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad   # v2.87.26
+        with:
+          tool: cargo-deny@0.20.2
+      - name: Dependencies (advisories, licences, bans, sources)
+        run: cargo deny check
