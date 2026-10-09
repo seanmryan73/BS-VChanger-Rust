@@ -11,8 +11,20 @@ use eframe::egui::{self, Color32, Context, RichText, ScrollArea, Ui};
 /// manifest says `2026.8.15` while the house convention displays `2026.08.15`.
 /// This pads it back rather than storing the padded form a second time.
 fn display_version() -> String {
-    let mut out = String::with_capacity(10);
-    for (i, part) in env!("CARGO_PKG_VERSION").split('.').enumerate() {
+    pad_version(env!("CARGO_PKG_VERSION"))
+}
+
+/// `2026.8.15` -> `2026.08.15`, and a same-day letter, which Cargo can only spell as a SemVer
+/// prerelease, back to its display form: `2026.10.9-a` -> `2026.10.09a` (vault
+/// Author-Version-Standards § Version Format). Split the suffix off first: padding by `.` alone
+/// left `9-a` unpadded. Any other prerelease (`-rc1`) is kept as written.
+fn pad_version(cargo: &str) -> String {
+    let (core, pre) = match cargo.split_once('-') {
+        Some((core, pre)) => (core, Some(pre)),
+        None => (cargo, None),
+    };
+    let mut out = String::with_capacity(12);
+    for (i, part) in core.split('.').enumerate() {
         if i > 0 {
             out.push('.');
             if part.len() == 1 {
@@ -20,6 +32,16 @@ fn display_version() -> String {
             }
         }
         out.push_str(part);
+    }
+    match pre {
+        Some(letter) if letter.len() == 1 && letter.chars().all(|c| c.is_ascii_lowercase()) => {
+            out.push_str(letter);
+        }
+        Some(other) => {
+            out.push('-');
+            out.push_str(other);
+        }
+        None => {}
     }
     out
 }
@@ -402,9 +424,10 @@ mod tests {
     fn the_displayed_version_tracks_cargo_toml() {
         let cargo = env!("CARGO_PKG_VERSION");
         let shown = display_version();
+        // Padding and the same-day letter's `-` are the only differences allowed.
         assert_eq!(
-            shown.replace(".0", "."),
-            cargo.replace(".0", "."),
+            shown.replace(".0", ".").replace('-', ""),
+            cargo.replace(".0", ".").replace('-', ""),
             "About shows {shown}, Cargo.toml says {cargo}"
         );
     }
@@ -415,8 +438,17 @@ mod tests {
         // Whatever the manifest says, every part after the year reads as two
         // digits — that is the form the vault notes and About screens use.
         for part in display_version().split('.').skip(1) {
-            assert_eq!(part.len(), 2, "part {part} of {} is not padded", display_version());
+            let digits = part.trim_end_matches(|c: char| c.is_ascii_lowercase());
+            assert_eq!(digits.len(), 2, "part {part} of {} is not padded", display_version());
         }
+    }
+
+    #[test]
+    fn a_same_day_letter_displays_as_a_suffix_and_other_prereleases_stay() {
+        assert_eq!(pad_version("2026.8.15"), "2026.08.15");
+        assert_eq!(pad_version("2026.10.9-a"), "2026.10.09a");
+        assert_eq!(pad_version("2026.10.19-b"), "2026.10.19b");
+        assert_eq!(pad_version("2026.6.25-rc1"), "2026.06.25-rc1");
     }
 
     /// The other half of the same defect: "18 themes" was displayed for a set

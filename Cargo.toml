@@ -1,8 +1,9 @@
 [package]
 name = "bs-vchanger"
-version = "2026.10.9"
+version = "2026.10.9-a"
 publish = false   # private app; lets cargo-deny skip its own licence field
 edition = "2021"
+rust-version = "1.96"
 license = "MIT"
 
 [dependencies]
